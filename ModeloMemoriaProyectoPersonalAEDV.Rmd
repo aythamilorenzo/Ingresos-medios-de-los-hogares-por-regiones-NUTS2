@@ -725,10 +725,14 @@ data.fechas %>%
 <!-- desarrollo de esta fase -->
 
 ```{r}
-dataset.name <- "nama_10r_2hhinc"
-data <- get_eurostat(dataset.name, time_format = 'date') %>%
-  as_tibble() %>%
-  arrange(TIME_PERIOD, geo) 
+# dataset.name <- "nama_10r_2hhinc"
+# data <- get_eurostat(dataset.name, time_format = 'date') %>%
+  # as_tibble() %>%
+  # arrange(TIME_PERIOD, geo)
+
+data <- read.csv("nama_10r_2hhinc.csv") %>% 
+  as_tibble() %>% 
+  arrange(TIME_PERIOD, geo)
 
 ```
 
@@ -811,8 +815,12 @@ data.top10 <- data %>%
   arrange(desc(values)) %>%
   head(n = 10)
 
+data.canarias.españa.renta <- data %>% 
+  filter(na_item == 'B6N' & unit == 'EUR_HAB' & full_name %in% c('Spain', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & NUTS != 1)
 
-ggplot(data.top10, aes(x = reorder(full_name, values), y = values, fill = values)) +
+data.top10.plot <- rbind(data.top10, data.canarias.españa.renta)
+
+ggplot(data.top10.plot, aes(x = reorder(full_name, values), y = values, fill = values)) +
   geom_col(width = 0.7, show.legend = FALSE) +          # Barras horizontales y gradiente
   geom_text(aes(label = scales::comma(round(values,0))), 
             hjust = -0.1, size = 4, color = "black") +  # Etiquetas sobre las barras
@@ -837,7 +845,7 @@ ggplot(data.top10, aes(x = reorder(full_name, values), y = values, fill = values
   expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
 ```
 
-Como podemos ver, tener en cuenta el costo de la vida de cada país es importante, las posiciones de algunos países han cambiado como por ejemplo Francia y Bélgica.
+Como podemos ver, tener en cuenta el costo de la vida de cada país es importante, las posiciones de algunos países han cambiado como por ejemplo Francia y Bélgica, vemos que España no se aleja tanto de entrar en el top 10.
 
 ```{r}
 data.top10PPS <- data %>%
@@ -845,8 +853,12 @@ data.top10PPS <- data %>%
   arrange(desc(values)) %>%
   head(n = 10)
 
+data.canarias.españa.renta.PPS <- data %>% 
+  filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & full_name %in% c('Spain', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & NUTS != 1)
 
-ggplot(data.top10PPS, aes(x = reorder(full_name, values), y = values, fill = values)) +
+data.top10PPS.plot <- rbind(data.top10PPS, data.canarias.españa.renta.PPS)
+
+ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill = values)) +
   geom_col(width = 0.7, show.legend = FALSE) +          # Barras horizontales y gradiente
   geom_text(aes(label = scales::comma(round(values,0))), 
             hjust = -0.1, size = 4, color = "black") +  # Etiquetas sobre las barras
@@ -871,7 +883,7 @@ ggplot(data.top10PPS, aes(x = reorder(full_name, values), y = values, fill = val
   expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
 ```
 
-Echemos un vistazo al top 10 con peor renta neta por habitante.
+Echemos un vistazo al top 10 con peor renta neta por habitante, como se esperaba, España es el país con mejor renta per cápita en este caso. Para el caso de Canarias (región NUTS 2), hay países con peor renta per cápita.
 
 
 ```{r}
@@ -880,8 +892,12 @@ data.top10PPS <- data %>%
   arrange(desc(values)) %>%
   tail(n = 10)
 
+data.canarias.españa.renta.PPS <- data %>% 
+  filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & full_name %in% c('Spain', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & NUTS != 1)
 
-ggplot(data.top10PPS, aes(x = reorder(full_name, values), y = values, fill = values)) +
+data.top10PPS.plot <- rbind(data.top10PPS, data.canarias.españa.renta.PPS)
+
+ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill = values)) +
   geom_col(width = 0.7, show.legend = FALSE) +          # Barras horizontales y gradiente
   geom_text(aes(label = scales::comma(round(values,0))), 
             hjust = -0.1, size = 4, color = "black") +  # Etiquetas sobre las barras
