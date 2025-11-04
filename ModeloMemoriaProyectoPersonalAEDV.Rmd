@@ -973,11 +973,11 @@ geom_text(aes(label = round(imp.per.capita,1)), color = "black") +
        y="País")
 ```
 
-Ahora, separemos España en 6 zonas (incluyendo Canarias) y veamos que proporción de la renta total se lleva cada parte. Hay que tener en cuenta que no estamos considerando la población que hay en cada zona
+Ahora, separemos España en 6 zonas (incluyendo Canarias) y veamos que proporción de la renta total se lleva cada parte. 
 
 ```{r,fig.asp = 0.8}
 data.spain.pie <- data %>%
-filter(substr(geo,1,2) == 'ES' & NUTS == 1 & na_item == 'B6N' & unit == 'EUR_HAB' & TIME_PERIOD == max(TIME_PERIOD)) %>%
+filter(substr(geo,1,2) == 'ES' & NUTS == 1 & na_item == 'B6N' & unit == 'MIO_EUR' & TIME_PERIOD == max(TIME_PERIOD)) %>%
   arrange(desc(values)) %>%
   filter(full_name != 'Comunidad de Madrid') %>%
   mutate(porcentaje = scales::percent(values/sum(values))) %>%
@@ -988,13 +988,14 @@ data.spain.pie %>%
              y = values,
              fill = full_name)) +
   geom_col() +
-  geom_text(aes(x=1.,label = porcentaje),size=6, position = position_stack(vjust = 0.5)) +
+  geom_text(aes(x=1.,label = porcentaje),size=4, position = position_stack(vjust = 0.5)) +
   coord_polar(theta = "y") +
   theme_void(base_size = 16) +
   labs(title  = "Proporción de la renta total en España divida por zonas")
 
 
 ```
+
 
 En España, el PPS por habitante es mayor que el ingreso nominal en todas las regiones, lo que indica que los precios locales son más bajos que la media de la UE, y por tanto el poder adquisitivo real de los hogares españoles es superior al que sugieren los ingresos nominales. La región Noreste muestra la mayor renta y poder adquisitivo, mientras que el Sur es la más desfavorecida
 
