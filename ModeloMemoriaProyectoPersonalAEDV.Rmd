@@ -432,8 +432,8 @@ El conjunto de datos contiene información anual sobre diversas partidas de ingr
   * **D1** -> **Remuneración de los Asalariados:** El total de salarios y cotizaciones sociales pagadas por los empleadores. Es un componente clave del Ingreso Primario.
 
   * **D4** -> **Rentas de la Propiedad:** Ingresos recibidos de la propiedad de activos (intereses, dividendos, rentas de la tierra, etc.).
-
-  * **D5** -> **Impuestos Corrientes sobre la Renta y el Patrimonio:** Impuestos obligatorios que los hogares pagan sobre sus ingresos o sus activos.
+  
+    * **D5** -> **Impuestos Corrientes sobre la Renta y el Patrimonio:** Impuestos obligatorios que los hogares pagan sobre sus ingresos o sus activos.
 
   * **D61** -> **Cotizaciones Sociales Netas:** Contribuciones pagadas a la seguridad social, ajustadas para reflejar las cuentas netas.
 
@@ -732,7 +732,8 @@ data.fechas %>%
 
 data <- read.csv("nama_10r_2hhinc.csv") %>% 
   as_tibble() %>% 
-  arrange(TIME_PERIOD, geo)
+  mutate(TIME_PERIOD = as.Date(TIME_PERIOD)) %>% 
+  arrange(TIME_PERIOD, geo) 
 
 ```
 
@@ -869,7 +870,7 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
     title = "Top 10 países (EU) con mayor renta neta disponible",
     subtitle = paste("Último año disponible: " , max(data.top10$TIME_PERIOD), "(Valores tomados en PPS)"),
     x = NULL,
-    y = "€ por habitante",
+    y = "Unidades PPS por habitante",
   ) +
   theme(
     axis.text.y = element_text(size = 11, face = "bold"),
@@ -908,7 +909,7 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
     title = "Top 10 países (EU) con menor renta neta disponible",
     subtitle = paste("Último año disponible: " , max(data.top10$TIME_PERIOD), "(Valores tomados en PPS)"),
     x = NULL,
-    y = "€ por habitante",
+    y = "Unidades PPS por habitante",
   ) +
   theme(
     axis.text.y = element_text(size = 11, face = "bold"),
@@ -922,24 +923,51 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
   expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
 ```
 
-Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022.
+Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, importaremos un dataset de población donde seleccionaremos un grupo que incluya la población comprendida entre 15 y 64 años para poder hacerlo por habitante. Hay que tener en cuenta que estamos midiendo los impuestos corrientes sobre la renta y el patrimonio, es decir, los impuestos obligatorios que los hogares pagan sobre sus ingresos o sus activos.
+
+```{r}
+
+poblacion <- get_eurostat("demo_r_pjangroup") %>% 
+  as_tibble() %>% 
+  mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
+  select(age, geo, TIME_PERIOD, values)
+
+
+edad_15_64 <- poblacion %>% 
+  filter(age %in% c("Y15-19", "Y20-24", "Y25-29", "Y30-34",
+                    "Y35-39", "Y40-44", "Y45-49",
+                    "Y50-54", "Y55-59", "Y60-64")) %>% 
+  group_by(geo, TIME_PERIOD) %>% 
+  summarise(edad_15_64 = sum(values)) %>% 
+  ungroup() %>%
+  select(geo, TIME_PERIOD, edad_15_64)
+  
+
+  
+
+```
+
 
 ```{r, fig.asp = 0.8}
 datatop10.imp <- data %>%
   filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 0, TIME_PERIOD > 2015 & TIME_PERIOD < 2023) %>%
-  select(full_name, TIME_PERIOD, values) %>%
+  select(geo, full_name, TIME_PERIOD, values) %>%
   arrange(desc(values)) 
 
+datatop10.imp.plot <- datatop10.imp %>% 
+  left_join(edad_15_64, by = c('geo', 'TIME_PERIOD')) %>%
+  mutate(imp.per.capita = values * 1e6 / edad_15_64) %>%
+  arrange(desc(imp.per.capita))
 
-datatop10.imp %>%
-  ggplot(aes(TIME_PERIOD,
-             full_name,
-             fill=values)) +
+datatop10.imp.plot %>%
+  ggplot(aes(x = TIME_PERIOD,
+             y = full_name,
+             fill=imp.per.capita)) +
   geom_tile(color = "grey80") +
   scale_fill_gradient(low = "white", 
                       high = "steelblue") +
-geom_text(aes(label = round(values,1)), color = "black") +
-  labs(title="Impuestos pagados por país en millones de euros",
+geom_text(aes(label = round(imp.per.capita,1)), color = "black") +
+  labs(title="Impuestos sobre renta y patrimonio pagados per cápita",
        subtitle = "2016-2022",
        x="Año",
        y="País")
