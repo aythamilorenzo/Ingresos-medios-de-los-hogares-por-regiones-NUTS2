@@ -215,6 +215,8 @@ library(tidyverse)
 library(eurostat)
 library(knitr)
 library(webshot2)
+library(ggrepel)
+
 
 
 # asociamos funciones a determinadas librerías para evitar posibles errores 
@@ -966,7 +968,7 @@ datatop10.imp.plot %>%
   geom_tile(color = "grey80") +
   scale_fill_gradient(low = "white", 
                       high = "steelblue") +
-geom_text(aes(label = round(imp.per.capita,1)), color = "black") +
+geom_text(aes(label = round(imp.per.capita,1)), size = 3.4, color = "black") +
   labs(title="Impuestos sobre renta y patrimonio pagados per cápita",
        subtitle = "2016-2022",
        x="Año",
@@ -997,30 +999,35 @@ data.spain.pie %>%
 ```
 
 
-En España, el PPS por habitante es mayor que el ingreso nominal en todas las regiones, lo que indica que los precios locales son más bajos que la media de la UE, y por tanto el poder adquisitivo real de los hogares españoles es superior al que sugieren los ingresos nominales. La región Noreste muestra la mayor renta y poder adquisitivo, mientras que el Sur es la más desfavorecida
+A continuación vamos a ver la relación entre las ganancias y los ahorros por habitante, veremos si más renta implica más ahorro por países. Como podemos ver existe una fuerte relación entre la renta y el ahorro, en general las comunidades con mayor renta disponible también presentan mayor capacidad de ahorro.
+
+Las regiones como País Vasco, Navarra y Madrid se sitúan claramente por encima de la media nacional, mientras que Andalucía, Extremadura o Canarias presentan niveles más bajos tanto de renta como de ahorro.
+Esto sugiere diferencias estructurales regionales en el poder adquisitivo y la capacidad de ahorro de los hogares.
 
 ```{r}
+data.spain.disp <- data %>%
+  filter(
+    na_item %in% c("B6N", "B7N") &
+    substr(geo,1,2) == 'ES' &
+    NUTS == 2 &
+    unit == "EUR_HAB" &
+      TIME_PERIOD == max(TIME_PERIOD)
+  ) %>%
+  pivot_wider(names_from = na_item, values_from = values)
 
-data.spain.disp <- data %>% 
-  filter(substr(geo,1,2) == 'ES' & NUTS == 1 & unit %in% c('PPS_EU27_2020_HAB', 'EUR_HAB') & !full_name %in% c('Comunidad de Madrid', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & na_item == 'B6N') %>% 
-  select(full_name, unit, values, na_item) %>% 
-  pivot_wider(names_from = unit, values_from = values)
 
 data.spain.disp %>% 
-  ggplot(aes(x = PPS_EU27_2020_HAB, 
-             y = EUR_HAB,
-             color = full_name)) +
-  geom_point(alpha = 0.7) +
-  geom_text(aes(label = full_name), hjust = 0.5, vjust = -0.5, size = 3) +
-  scale_color_brewer(palette = "Set2") +
+ggplot(aes(x = B6N, y = B7N, label = full_name)) +
+  geom_point(color = "#0072B2", size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  geom_text_repel(size = 3, max.overlaps = 20) +
   labs(
-    title = "España: Renta neta en PPS vs Renta neta en EUR/HAB",
-    subtitle = "Por región",
-    x = "PPS per cápita",
-    y = "Ingreso medio por habitante",
+    title = "Relación entre renta disponible y ahorro neto",
+    x = "Renta disponible (€ por habitante)",
+    y = "Ahorro neto (€ por habitante)"
   ) +
-  theme_minimal() +
-  theme(legend.position = 'none')
+  theme_minimal(base_size = 13)
+
 ```
 
 
