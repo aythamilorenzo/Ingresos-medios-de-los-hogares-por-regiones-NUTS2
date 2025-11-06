@@ -1,0 +1,27 @@
+---
+title: "Income of households by NUTS 2"
+author: "Aythami Lorenzo"
+date: "`r Sys.Date()`"
+output: flexdashboard::flex_dashboard
+runtime: shiny
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  cache=FALSE,  
+  echo=FALSE
+)
+```
+
+Column {.sidebar data-width=230}
+--------------------------------------------------
+```{r}
+shiny::selectInput(
+  "continente",
+  label = "Selección de continente",
+  choices = c("Africa","Asia","Europe"),
+  selected = "Europe"
+)
+```
