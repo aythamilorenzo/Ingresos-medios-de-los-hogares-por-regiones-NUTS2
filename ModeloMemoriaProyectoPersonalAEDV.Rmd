@@ -993,7 +993,8 @@ data.spain.pie %>%
   geom_text(aes(x=1.,label = porcentaje),size=4, position = position_stack(vjust = 0.5)) +
   coord_polar(theta = "y") +
   theme_void(base_size = 16) +
-  labs(title  = "Proporción de la renta total en España divida por zonas")
+  labs(title  = "Proporción de la renta total en España divida por zonas",
+       fill = 'Zona de España')
 
 
 ```
@@ -1212,6 +1213,7 @@ IMPORTANTE: La primera vez que ejecutes este chunk desde la consola de R se te p
 
 
 ```{r}
+gs4_deauth()
 SeguimientoActividadesProyecto <- read_sheet('https://docs.google.com/spreadsheets/d/1iD312qTpwY65gMgeWzOAkbyM-ONU5t0RhibRUIumkeU/edit?gid=0#gid=0') %>%
   as_tibble() 
 ```
