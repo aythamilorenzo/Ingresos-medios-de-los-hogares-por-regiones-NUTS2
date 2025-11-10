@@ -69,7 +69,7 @@ selectInput <- shiny::selectInput
 
 ```
 
-```{css, echo = FALSE}
+```{css estilo_memoria, echo = FALSE}
 <style>
 /* Fuente principal: Times New Roman para todo el documento */
 body {
@@ -949,7 +949,7 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
 
 Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, importaremos un dataset de población donde seleccionaremos un grupo que incluya la población comprendida entre 15 y 64 años para poder hacerlo por habitante. Hay que tener en cuenta que estamos midiendo los impuestos corrientes sobre la renta y el patrimonio, es decir, los impuestos obligatorios que los hogares pagan sobre sus ingresos o sus activos.
 
-```{r}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 
 poblacion <- get_eurostat("demo_r_pjangroup") %>% 
   as_tibble() %>% 
