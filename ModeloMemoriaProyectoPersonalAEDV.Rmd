@@ -23,6 +23,52 @@ Sys.setlocale("LC_ALL", "es_ES.UTF-8")
 
 ```
 
+```{r librerias, include=FALSE}
+# carga de librerías
+library(DT)
+library(googlesheets4)
+library(kableExtra)
+library(patchwork)
+library(zoo)
+library(MASS)
+library(flexdashboard)
+library(datasets)
+library(highcharter) 
+library(fpp3)
+library(RColorBrewer)
+library(openxlsx)  
+library(leaflet)  
+library(geojsonio)
+library(plotly)
+library(ggplot2)
+library(tidyverse)
+library(eurostat)
+library(knitr)
+library(webshot2)
+library(ggrepel)
+library(ggplot2)
+
+
+
+# asociamos funciones a determinadas librerías para evitar posibles errores 
+filter <- dplyr::filter # Filtra filas según condiciones
+select <- dplyr::select # Selecciona columnas
+mutate <- dplyr::mutate # Crea o modifica columnas
+arrange <- dplyr::arrange # Ordena filas
+group_by <- dplyr::group_by # Agrupa datos
+summarise <- dplyr::summarise # Resume variables (por ejemplo, con medias, conteos)
+summarize <- dplyr::summarize # Lo mismo que summarise
+rename <- dplyr::rename # Cambia nombres de columnas
+distinct <- dplyr::distinct # Elimina filas duplicadas
+slice<- dplyr::slice # Selecciona filas por posición
+relocate<- dplyr::relocate # Reordena columnas
+
+selectInput <- shiny::selectInput
+
+
+
+```
+
 ```{css, echo = FALSE}
 <style>
 /* Fuente principal: Times New Roman para todo el documento */
@@ -182,6 +228,26 @@ footer {
 
 ```
 
+```{r css_graficas, results='hide', include=FALSE}
+theme_set(
+  theme_minimal(base_family = "serif") +
+  theme(
+    text = element_text(family = "serif", color = "#222222"),
+    plot.title = element_text(family = "serif", face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(family = "serif", face = "italic", size = 15, hjust = 0.5),
+    axis.title = element_text(family = "serif", face = "bold", size = 13),
+    axis.text = element_text(family = "serif", size = 10),
+    legend.title = element_text(family = "serif", face = "bold", size = 14),
+    legend.text = element_text(family = "serif", size = 12),
+    plot.margin = margin(15, 15, 15, 15),
+  )
+)
+
+# Fuente serif también para textos dentro de los gráficos (geom_text y geom_label)
+update_geom_defaults("text", list(family = "serif"))
+update_geom_defaults("label", list(family = "serif"))
+```
+
 
 ```{r,echo=FALSE}
 # OPCIONES POR DEFECTO AL COMPILAR LOS CHUNKS 
@@ -193,50 +259,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r global, include=FALSE}
-# carga de librerías
-library(DT)
-library(googlesheets4)
-library(kableExtra)
-library(patchwork)
-library(zoo)
-library(MASS)
-library(flexdashboard)
-library(datasets)
-library(highcharter) 
-library(fpp3)
-library(RColorBrewer)
-library(openxlsx)  
-library(leaflet)  
-library(geojsonio)
-library(plotly)
-library(ggplot2)
-library(tidyverse)
-library(eurostat)
-library(knitr)
-library(webshot2)
-library(ggrepel)
-
-
-
-# asociamos funciones a determinadas librerías para evitar posibles errores 
-filter <- dplyr::filter # Filtra filas según condiciones
-select <- dplyr::select # Selecciona columnas
-mutate <- dplyr::mutate # Crea o modifica columnas
-arrange <- dplyr::arrange # Ordena filas
-group_by <- dplyr::group_by # Agrupa datos
-summarise <- dplyr::summarise # Resume variables (por ejemplo, con medias, conteos)
-summarize <- dplyr::summarize # Lo mismo que summarise
-rename <- dplyr::rename # Cambia nombres de columnas
-distinct <- dplyr::distinct # Elimina filas duplicadas
-slice<- dplyr::slice # Selecciona filas por posición
-relocate<- dplyr::relocate # Reordena columnas
-
-selectInput <- shiny::selectInput
-
-
-
-```
 
 
 <!-- Todos los proyectos personales tienen que tener un cuadro de mandos (Tema 7 de la asignatura) cuya dirección es similar a la que sigue poniendo tu nº de usuario (en lugar de a2405) y el nombre del Rmd asociado. Los cuadros de mando se alojan en un servidor del DIS y solo se puede acceder a ellos a través de la red de la ULPGC o usando VPN -->
