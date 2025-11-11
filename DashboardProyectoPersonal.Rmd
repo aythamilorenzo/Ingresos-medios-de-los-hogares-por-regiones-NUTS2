@@ -88,13 +88,19 @@ NUTS <- read_csv('http://ctim.es/AEDV/data/eurostac_real_nuts.csv')%>%
 data <- data %>%
   left_join(NUTS, by = 'geo') %>%
   relocate(full_name, freq, unit, direct, na_item, geo, TIME_PERIOD, values, .after = data$NUTS)
-  
+
+
 ```
 
 
 Series Temporales
 =======================================================================
 
+
+Column {.tabset}
+--------------------------------------------------
+
+### Provincias España
 
 ```{r}
 shiny::selectInput(
@@ -109,10 +115,6 @@ shiny::selectInput(
 )
 ```
 
-Column {.tabset}
---------------------------------------------------
-
-### Provincias España
 ```{r}
 renderPlotly({
   p <- data %>%
@@ -124,7 +126,8 @@ ggplot(aes(x = TIME_PERIOD, y = values)) +
   theme_minimal() +
   labs(x = "Año", y = "€ por habitante") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(panel.spacing.x = unit(1, "lines"))
+  theme(panel.spacing.x = unit(1, "lines")) +
+  theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15))
   
   ggplotly(p)
 })
@@ -132,6 +135,17 @@ ggplot(aes(x = TIME_PERIOD, y = values)) +
 
 ### Países 
 
+```{r}
+shiny::selectInput(
+  "Indicador.paises",
+  label = "Indicador",
+  choices = c(
+    "Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N"
+  ),
+  selected = "B6N"
+)
+```
 ```{r}
 
 ### Países 
@@ -145,7 +159,7 @@ paises <- c(
 renderPlotly({
   
   data_paises <- data %>%
-    filter(na_item == input$Indicador & unit == "PPS_EU27_2020_HAB" & geo %in% paises) %>%
+    filter(na_item == input$Indicador.paises & unit == "PPS_EU27_2020_HAB" & geo %in% paises) %>%
     mutate(grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
       full_name = forcats::fct_relevel(full_name, "Spain", "Canarias")
     )
@@ -161,10 +175,11 @@ renderPlotly({
     facet_wrap(~ full_name,
                labeller = labeller(full_name = label_wrap_gen(width = 15))) +
     theme_minimal() + 
-    labs(x = "Año", y = "PPS por habitante (Base EU27)") + 
+    labs(x = "Año", y = "Unidades PPS por habitante") + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     theme(panel.spacing.x = unit(1, "lines")) +
-    theme(legend.position = "none")
+    theme(legend.position = "none") +
+    theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15))
   ggplotly(p, tooltip = c('TIME_PERIOD', 'values'))
 })
 
