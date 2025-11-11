@@ -15,13 +15,157 @@ knitr::opts_chunk$set(
 )
 ```
 
-Column {.sidebar data-width=230}
---------------------------------------------------
+```{r global, include=FALSE}
+# carga de librerías
+library(DT)
+library(googlesheets4)
+library(kableExtra)
+library(patchwork)
+library(zoo)
+library(MASS)
+library(flexdashboard)
+library(datasets)
+library(highcharter) 
+library(fpp3)
+library(RColorBrewer)
+library(openxlsx)  
+library(leaflet)  
+library(geojsonio)
+library(plotly)
+library(ggplot2)
+library(tidyverse)
+library(eurostat)
+library(knitr)
+library(webshot2)
+library(ggrepel)
+
+
+
+# asociamos funciones a determinadas librerías para evitar posibles errores 
+filter <- dplyr::filter # Filtra filas según condiciones
+select <- dplyr::select # Selecciona columnas
+mutate <- dplyr::mutate # Crea o modifica columnas
+arrange <- dplyr::arrange # Ordena filas
+group_by <- dplyr::group_by # Agrupa datos
+summarise <- dplyr::summarise # Resume variables (por ejemplo, con medias, conteos)
+summarize <- dplyr::summarize # Lo mismo que summarise
+rename <- dplyr::rename # Cambia nombres de columnas
+distinct <- dplyr::distinct # Elimina filas duplicadas
+slice<- dplyr::slice # Selecciona filas por posición
+relocate<- dplyr::relocate # Reordena columnas
+
+selectInput <- shiny::selectInput
+```
+
+```{r}
+# dataset.name <- "nama_10r_2hhinc"
+# data <- get_eurostat(dataset.name, time_format = 'date') %>%
+  # as_tibble() %>%
+  # arrange(TIME_PERIOD, geo)
+
+data <- read.csv("nama_10r_2hhinc.csv") %>% 
+  as_tibble() %>% 
+  mutate(TIME_PERIOD = as.Date(TIME_PERIOD)) %>% 
+  arrange(TIME_PERIOD, geo) 
+
+```
+
+```{r}
+data <- data %>%
+  mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>%
+  filter(TIME_PERIOD > 1999 & TIME_PERIOD < 2023)
+
+nuts_names <- get_eurostat_dic("geo") %>% # Diccionario de códigos a nombres
+  as_tibble()
+
+data <- data %>%
+  left_join(nuts_names, by = c("geo" = "code_name"))
+
+NUTS <- read_csv('http://ctim.es/AEDV/data/eurostac_real_nuts.csv')%>%
+  as_tibble() %>%
+  select(-full_name) 
+
+data <- data %>%
+  left_join(NUTS, by = 'geo') %>%
+  relocate(full_name, freq, unit, direct, na_item, geo, TIME_PERIOD, values, .after = data$NUTS)
+  
+```
+
+
+Series Temporales
+=======================================================================
+
+
 ```{r}
 shiny::selectInput(
-  "continente",
-  label = "Selección de continente",
-  choices = c("Africa","Asia","Europe"),
-  selected = "Europe"
+  "Indicador",
+  label = "Indicador",
+  choices = c(
+    "Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N",
+    "Ahorro neto" = "B7N"
+  ),
+  selected = "B6N"
 )
+```
+
+Column {.tabset}
+--------------------------------------------------
+
+### Provincias España
+```{r}
+renderPlotly({
+  p <- data %>%
+  filter(na_item == input$Indicador & unit == "EUR_HAB" & substr(geo,1,2) == "ES" & NUTS == 2) %>% 
+ggplot(aes(x = TIME_PERIOD, y = values)) +
+  geom_line(color = "#0072B2", linewidth = 0.8) +
+  facet_wrap(~ full_name,
+             labeller = labeller(full_name = label_wrap_gen(width = 15))) +
+  theme_minimal() +
+  labs(x = "Año", y = "€ por habitante") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(panel.spacing.x = unit(1, "lines"))
+  
+  ggplotly(p)
+})
+```
+
+### Países 
+
+```{r}
+
+### Países 
+
+
+
+paises <- c(
+  "ES", "ES70", "DE", "FR", "IT", "PT", "EL", "NL", "IE", "SE", "BE", "PL" 
+)
+
+renderPlotly({
+  
+  data_paises <- data %>%
+    filter(na_item == input$Indicador & unit == "PPS_EU27_2020_HAB" & geo %in% paises) %>%
+    mutate(grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
+      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias")
+    )
+  
+  
+  p <- data_paises %>%
+    ggplot(aes(x = TIME_PERIOD, y = values, color = grupo_color)) +
+    geom_line(linewidth = 0.8) +
+    scale_color_manual(values = c(
+      "España y Canarias" = "red",
+      "Otros Países" = "#0072B2"
+    )) +
+    facet_wrap(~ full_name,
+               labeller = labeller(full_name = label_wrap_gen(width = 15))) +
+    theme_minimal() + 
+    labs(x = "Año", y = "PPS por habitante (Base EU27)") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    theme(panel.spacing.x = unit(1, "lines")) +
+    theme(legend.position = "none")
+  ggplotly(p, tooltip = c('TIME_PERIOD', 'values'))
+})
+
 ```
