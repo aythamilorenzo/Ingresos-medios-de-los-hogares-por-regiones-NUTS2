@@ -46,7 +46,7 @@ library(eurostat)
 library(knitr)
 library(webshot2)
 library(ggrepel)
-library(ggplot2)
+
 
 
 
@@ -398,9 +398,11 @@ El análisis de lo datos realizado para la validación del tema del proyecto per
 
 Para la búsqueda de datos, lo que se ha hecho es buscar directamente en la lista de datasets de Eurostat, en primer lugar había encontrado un dataset interesante pero este prácticamente hacía imposible la combinación de atributos además de tener inexistentes o pocos datos para España y Canarias, finalmente encontré el dataset con el que he trabajado y en este caso apenas he tenido incidencias o dificultades.
 
+Para la búsqueda del segundo dataset han existido mas problemas ya que principalmente teníamos un dataset de población y sumábamos por grupos para concentrar a la poblacion entre 15 y 65 años y de esta manera normalizar los valores de los atributos, sin embargo, este dataset tenía problemas ya que los valores eran observaciones tomadas el 1 de enero de cada año, esto hacía que los resultados fueran valores lejanos de la realidad. El problema es que normalmente para calcular datos económicos per cápita no se suele separar por grupos y lo que se hace es tomar datos de poblaciones que representen la media de la población en un año, dicho esto, tuve que buscar otro dataset que contaba con estas característica y que proporcionaba valores mucho más exactos.
+
 ## Comprensión de los datos
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
+```{r desc_variables, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
 dataset.name <- "nama_10r_2hhinc"
 data <- get_eurostat(dataset.name, time_format = "date") %>%
   as_tibble() %>%
@@ -743,6 +745,87 @@ data.fechas %>%
 )
 ```
 
+<br>
+<br>
+A continuación veremos información sobre nuestro dataset secundario que incluye datos de población anual por zonas.
+
+
+```{r}
+dataset.name <- "nama_10r_3popgdp"
+data <- get_eurostat(dataset.name, time_format = "date") %>%
+  as_tibble() %>%
+  arrange(TIME_PERIOD, geo)
+```
+
+
+```{r}
+for(col in colnames(data)){
+  if(is.numeric(data[[col]])) next
+  if(col=="TIME_PERIOD"){
+    # print(col)
+    # print(
+    #   paste0("data.start: ",min(data[[col]]),
+    #          ", data.end: ",max(data[[col]]),
+    #          ", Number of time periods: ",length(unique(data[[col]]))
+    #   )
+    # )
+    
+    cat("\nCOLUMNA: TIME_PERIOD \n")
+    print(
+      data %>%
+        group_by(TIME_PERIOD) %>%
+        summarise(N.observ=dplyr::n())%>%
+        as.matrix() %>%
+        noquote()
+    )
+    next
+  }
+ if(col=="geo"){
+    cat("\nCONTABILIZACIÓN Nº REGIONES NUTS A PARTIR DE LA COLUMNA geo\n")
+    print(
+      tibble(
+        NUTS=sapply(unique(data[[col]]),NUTS.computation)
+      ) %>%
+        group_by(NUTS) %>%
+        summarise(`Number of Regions`=dplyr::n()) %>%
+        as.matrix() %>%
+        noquote()
+    )
+    next
+ }
+  tb <-  data %>%
+    left_join(get_eurostat_dic(col)%>%rename(!!col := code_name),
+              by=col) %>%
+    group_by(!!sym(col),full_name)%>%
+    summarise(N.Observ=dplyr::n()) %>%
+    relocate(N.Observ,.before = full_name)%>%
+    arrange(desc(N.Observ)) %>%
+    mutate(full_name=ifelse(nchar(full_name)<41,full_name,paste0(substr(full_name,1,40),"..")))
+    
+  texto <- paste0("COLUMNA: ",col)
+  if(nrow(tb)>50){
+    texto <- paste0(texto," (",nrow(tb)," opciones, se imprimen 50)")
+    tb <- head(tb,50)
+  }
+  cat(texto,"\n")
+  
+  tb %>% 
+    as.matrix() %>%
+    noquote() %>%
+    print()
+}
+
+```
+
+### Estructura de los datos
+
+El dataset (`nama_10r_3popgdp`) se presenta en una estructura **ordenada** (*tidy*). Esta organización se define porque **cada fila representa una única observación**. Es decir, la combinación de las variables categóricas y la variable temporal (`TIME_PERIOD`) define de forma unívoca la medición. El resultado de esta medición se almacena en una sola columna numérica (`values`). Este formato, también conocido como "formato largo," es el más eficiente y recomendado para la manipulación y el análisis directo de datos en entornos de software estadístico como R.
+
+```{r}
+str(data)
+```
+
+
 
 ## Preparación de los datos
 
@@ -763,7 +846,7 @@ data <- read.csv("nama_10r_2hhinc.csv") %>%
 
 Para empezar, vamos a pasar 'TIME_PERIOD' a año y además vamos a filtrar para que solo aparezcan los años desde el 2000 hasta el 2022, ya que son los años en los que hay más observaciones. Luego, como solo tenemos códigos de cada región y no sus nombres, vamos a unir esta tabla de eurostat que nos proporciona todos los nombres. Por último, vamos a añadir la información de NUTS para todas las regiones en una nueva columna.
 
-```{r}
+```{r carga_dataset}
 data <- data %>%
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>%
   filter(TIME_PERIOD > 1999 & TIME_PERIOD < 2023)
@@ -784,13 +867,23 @@ data <- data %>%
   
 ```
 
+A continuación vamos a cargar un dataset de población que toma como población la media de cada año, esto es lo más correcto para normalizar datos económicos para los que no se tienen datos per cápita como sucede en nuestro caso para muchos indicadores. En cada caso que lo necesitemos, simplemente uniremos esta tabla a otra filtrada con los paises o provincias que queramos por la columna `geo` y `TIME_PERIOD` y normalizaremos los valores necesarios. Le cambiamos el nombre a la  columna `values` por `poblacion` para evitar confusiones.
+```{r}
+poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>% 
+  as_tibble() %>% 
+  mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
+  rename(poblacion = values)
+
+```
+
+
 Al analizar la evolución de la renta en las regiones de España, vemos que en general la tendencia es hacia arriba, exceptuando 2005-2010 y 2020, esto probablemente, por sucesos como la explosión de la burbuja inmobiliaria en 2008 y en el caso de 2020 por el covid. Todas siguen un patrón parecido, quitando eso, vemos que Madrid, Navarra y País Vasco son las comunidades con mejor renta neta por persona.
 
 ```{r, fig.asp = 1.1}
 data.es <- data %>%
   filter(na_item == "B6N" & unit == "EUR_HAB" & substr(geo,1,2) == "ES" & NUTS == 2)
 
-ggplot(data.es, aes(x = TIME_PERIOD, y = values)) +
+data.es.plot <- ggplot(data.es, aes(x = TIME_PERIOD, y = values)) +
   geom_line(color = "#0072B2", linewidth = 0.8) +
   facet_wrap(~ full_name,
              labeller = labeller(full_name = label_wrap_gen(width = 15))) +
@@ -801,10 +894,8 @@ ggplot(data.es, aes(x = TIME_PERIOD, y = values)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(panel.spacing.x = unit(1, "lines"))
 
-  
 
-
-
+ggplotly(data.es.plot)
 ```
 
 Como vemos, en primer lugar se encuentra País Vasco, Canarias se encuentra bastante abajo.
@@ -947,30 +1038,7 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
   expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
 ```
 
-Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, importaremos un dataset de población donde seleccionaremos un grupo que incluya la población comprendida entre 15 y 64 años para poder hacerlo por habitante. Hay que tener en cuenta que estamos midiendo los impuestos corrientes sobre la renta y el patrimonio, es decir, los impuestos obligatorios que los hogares pagan sobre sus ingresos o sus activos.
-
-```{r message=FALSE, warning=FALSE, results = 'hide'}
-
-poblacion <- get_eurostat("demo_r_pjangroup") %>% 
-  as_tibble() %>% 
-  mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
-  select(age, geo, TIME_PERIOD, values)
-
-
-edad_15_64 <- poblacion %>% 
-  filter(age %in% c("Y15-19", "Y20-24", "Y25-29", "Y30-34",
-                    "Y35-39", "Y40-44", "Y45-49",
-                    "Y50-54", "Y55-59", "Y60-64")) %>% 
-  group_by(geo, TIME_PERIOD) %>% 
-  summarise(edad_15_64 = sum(values)) %>% 
-  ungroup() %>%
-  select(geo, TIME_PERIOD, edad_15_64)
-  
-
-  
-
-```
-
+Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, utilizaremos el dataset secundario de población que hemos añadido anteriormente y haremos las operaciones necesarias para normalizar estos valores transformándolos a per cápita. Hay que tener en cuenta que los valores de los impuestos están en millones de euros y los de la población en miles de personas.
 
 ```{r, fig.asp = 0.8}
 datatop10.imp <- data %>%
@@ -978,12 +1046,12 @@ datatop10.imp <- data %>%
   select(geo, full_name, TIME_PERIOD, values) %>%
   arrange(desc(values)) 
 
-datatop10.imp.plot <- datatop10.imp %>% 
-  left_join(edad_15_64, by = c('geo', 'TIME_PERIOD')) %>%
-  mutate(imp.per.capita = values * 1e6 / edad_15_64) %>%
+datatop10.imp <- datatop10.imp %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+  mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
   arrange(desc(imp.per.capita))
 
-datatop10.imp.plot %>%
+datatop10.imp %>%
   ggplot(aes(x = TIME_PERIOD,
              y = full_name,
              fill=imp.per.capita)) +
