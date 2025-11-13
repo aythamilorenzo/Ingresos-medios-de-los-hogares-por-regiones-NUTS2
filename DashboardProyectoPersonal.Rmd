@@ -40,7 +40,6 @@ library(webshot2)
 library(ggrepel)
 
 
-
 # asociamos funciones a determinadas librerías para evitar posibles errores 
 filter <- dplyr::filter # Filtra filas según condiciones
 select <- dplyr::select # Selecciona columnas
@@ -56,6 +55,120 @@ relocate<- dplyr::relocate # Reordena columnas
 
 selectInput <- shiny::selectInput
 ```
+
+```{r}
+geoj <- geojson_read("https://ctim.es/AEDV/data/geo_countries.geojson",  what = "sp")
+geoj.tb <- geoj %>% as_tibble()
+```
+
+```{r}
+geoj2 <- geojson_read("https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2024_4326_LEVL_2.geojson", what = 'sp')
+
+geoj2.tb <- geoj2 %>% 
+  as_tibble() %>% 
+  rename(geo = NUTS_ID)
+
+```
+
+```{r}
+
+# Diccionario maestro de códigos a nombres usado para la leyenda de los mapas coropléticos
+master_indicadores <- c(
+  "Ingreso primario neto" = "B5N",
+  "Renta disponible neta" = "B6N",
+  "Ahorro neto" = 'B7N',
+  "Remuneración de los asalariados" = "D1",
+  "Prestaciones sociales recibidas" = "D62",
+  "Impuestos sobre renta y patrimonio" = "D5",
+  "Rentas de la propiedad" = "D4",
+  "Gasto en consumo final" = "P3",
+  "Inversión en activos fijos" = "P51C"
+)
+```
+
+
+```{r}
+MapaCoroplético <- function(geoj,value,region_labels,legend_title){
+pal <- colorQuantile("YlOrRd", value, n = 9)
+p <-  geoj %>%
+    leaflet() %>%  
+    setView(lng = 25, lat = 22, zoom = 2)  %>% 
+    addPolygons(
+      fillColor = ~pal(value), 
+      weight = 2,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.7,
+      highlightOptions = highlightOptions( 
+        weight = 2,
+        color = rgb(0.2,0.2,0.2),
+        dashArray = "",
+        fillOpacity = 0.7,
+        bringToFront = TRUE
+      ),
+      label = region_labels 
+    ) %>% 
+    addLegend("bottomleft", 
+      pal = pal, 
+      values = value,
+      title = legend_title,
+      labFormat = function(type, cuts, p) {
+        n = length(cuts) 
+        x = (cuts[-n] + cuts[-1])/2
+        x=prettyNum(round(x,
+            digits=max(5-nchar(as.character(round(max(na.omit(value))))),0)), 
+            big.mark = ","
+        )
+        as.character(x)
+      },
+      opacity = 1
+    )
+  return(p)
+}
+```
+
+```{r}
+MapaCoroplético2 <- function(geoj,value,region_labels,legend_title){
+pal <- colorQuantile("YlOrRd", value, n = 9)
+p <-  geoj %>%
+    leaflet() %>%  
+    setView(lng = 10.7038, lat = 44, zoom = 4) %>% 
+     addPolygons(
+      fillColor = ~pal(value), 
+      weight = 2,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.7,
+      highlightOptions = highlightOptions( 
+        weight = 2,
+        color = rgb(0.2,0.2,0.2),
+        dashArray = "",
+        fillOpacity = 0.7,
+        bringToFront = TRUE
+      ),
+      label = region_labels 
+    ) %>% 
+    addLegend("bottomleft", 
+      pal = pal, 
+      values = value,
+      title = legend_title,
+      labFormat = function(type, cuts, p) {
+        n = length(cuts) 
+        x = (cuts[-n] + cuts[-1])/2
+        x=prettyNum(round(x,
+            digits=max(5-nchar(as.character(round(max(na.omit(value))))),0)), 
+            big.mark = ","
+        )
+        as.character(x)
+      },
+      opacity = 1
+    )
+  return(p)
+}
+```
+
 
 ```{r}
 # dataset.name <- "nama_10r_2hhinc"
@@ -763,3 +876,286 @@ ggplot(aes(x = TIME_PERIOD,
   ggplotly(p, tooltip = "text")
 })
 ```
+
+Atributos por año 
+================================================
+
+Column {.sidebar data-width=260}
+-------------------------------------------------
+
+```{r}
+
+shiny::uiOutput("Indicador.mapa.dinamico")
+
+output$Indicador.mapa.dinamico <- shiny::renderUI({
+  
+  if(input$NUTS == 2) {
+    if(input$Unidad == "PPS_EU27_2020_HAB") {
+
+        opciones <- c("Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N")
+        
+    } else {
+      
+    opciones <- c("Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N",
+    "Ahorro neto" = 'B7N',
+    "Remuneración de los asalariados" = "D1",
+    "Prestaciones sociales recibidas" = "D62",
+    "Impuestos sobre renta y patrimonio" = "D5",
+    "Rentas de la propiedad" = "D4",
+    "Gasto en consumo final" = "P3",
+    "Inversión en activos fijos" = "P51C")
+    }
+    
+  } else {
+    
+    if(input$Unidad == "PPS_EU27_2020_HAB") {
+
+        opciones <- c("Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N")
+        
+    } else {
+    
+    opciones <- c("Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N",
+    "Remuneración de los asalariados" = "D1",
+    "Prestaciones sociales recibidas" = "D62",
+    "Impuestos sobre renta y patrimonio" = "D5",
+    "Rentas de la propiedad" = "D4")
+    }
+  }
+  
+  shiny::selectInput(
+    "Indicador.mapa",
+    label = "Indicador",
+    choices = opciones,
+    selected = "B6N"
+  )
+  
+})
+
+shiny::selectInput(
+  "Unidad",
+  label = "Unidad",
+  choices = c(
+    "Unidades PPS por habitante" = "PPS_EU27_2020_HAB",
+    "€ por habitante" = "EUR_HAB"),
+  selected = "EUR_HAB"
+)
+
+shiny::selectInput(
+  "NUTS",
+  label = "NUTS",
+  choices = c("0",
+              "2"),
+  selected = "2"
+)
+
+
+shiny::sliderInput(
+  "Año",
+  label = "Año",
+  min = first(data$TIME_PERIOD),
+  max = last(data$TIME_PERIOD),
+  value = 2016,
+  step = 1,
+  
+  ticks = FALSE
+)
+```
+
+```{r}
+iso_map <- tibble::tribble(
+  ~geo, ~ISO_A3,
+  "AT", "AUT", "BE", "BEL", "BG", "BGR", "CH", "CHE",
+  "CY", "CYP", "CZ", "CZE", "DE", "DEU", "DK", "DNK",
+  "EE", "EST", "EL", "GRC", "ES", "ESP", "FI", "FIN",
+  "FR", "FRA", "HR", "HRV", "HU", "HUN", "IE", "IRL",
+  "IS", "ISL", "IT", "ITA", "LT", "LTU", "LU", "LUX",
+  "LV", "LVA", "MT", "MLT", "NL", "NLD", "NO", "NOR",
+  "PL", "POL", "PT", "PRT", "RO", "ROU", "SE", "SWE",
+  "SI", "SVN", "SK", "SVK", "UK", "GBR" 
+)
+
+data <- data %>% 
+  left_join(iso_map, by = 'geo')
+```
+
+```{r}
+input.processing.atributo.año <- reactive({
+    
+    
+    if(input$Indicador.mapa %in% c('B5N', 'B6N')) {
+    tb <- data %>% 
+    filter(na_item == input$Indicador.mapa & TIME_PERIOD == input$Año 
+           & unit == input$Unidad & NUTS == input$NUTS) 
+      
+      if(input$Unidad == 'EUR_HAB'){
+        unidad = '€/HAB'
+      } else {
+        
+        unidad = "PPS/HAB"
+        
+      }
+      
+    } else if(input$Indicador.mapa %in% c('D4', 'D62')) {
+      
+      tb <- data %>% 
+    filter(na_item == input$Indicador.mapa & TIME_PERIOD == input$Año 
+           & unit == "MIO_EUR" & NUTS == input$NUTS & direct == 'RECV') 
+      
+      tb <- tb %>% 
+        left_join(poblacion %>% 
+                    select(-freq, -unit), by = c('TIME_PERIOD', 'geo')) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(values = per.capita)
+      
+      unidad = "€/HAB"
+    } else {
+      
+            tb <- data %>% 
+    filter(na_item == input$Indicador.mapa & TIME_PERIOD == input$Año 
+           & unit == "MIO_EUR" & NUTS == input$NUTS) 
+      
+      tb <- tb %>% 
+        left_join(poblacion %>% 
+                    select(-freq, -unit), by = c('TIME_PERIOD', 'geo')) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(values = per.capita)
+      
+      unidad = "€/HAB"
+    }
+  
+  return(list(tb, unidad))
+  
+})
+```
+
+```{r}
+shiny::renderTable({
+  
+  tb <- input.processing.atributo.año()[[1]] %>% 
+    arrange(desc(values)) %>% 
+    select(full_name, values) %>% 
+    rename(Región = full_name,
+           valores = values)
+
+  tb %>% 
+ mutate(valores=prettyNum(
+  round(valores,
+   digits=max(5-nchar(as.character(round(max(na.omit(valores))))),0)
+  ),
+  big.mark = ",")
+ ) 
+  
+})
+```
+
+```{r}
+input.processing.atributo.año.join <- reactive({
+  
+  tb <- input.processing.atributo.año()[[1]]
+  unidad <- input.processing.atributo.año()[[2]]
+  
+  indicador<- input$Indicador.mapa
+  legend_name <- names(master_indicadores)[master_indicadores == indicador]
+  
+  legend_title_break <- legend_name %>%
+    stringr::str_replace(" sobre ", " sobre <br>") %>%
+    stringr::str_replace(" de los ", " de los <br>") %>%
+    stringr::str_replace(" y ", " y <br>") %>% 
+    stringr::str_replace(" en ", " en <br>") %>% 
+    stringr::str_replace(" primario ", " primario <br>") %>% 
+    stringr::str_replace(" disponible ", " disponible <br>") %>% 
+    stringr::str_replace("Ingreso ", "Ingreso <br>") %>% 
+    stringr::str_replace("Renta ", "Renta <br>") %>% 
+    stringr::str_replace("Prestaciones ", "Prestaciones <br>") %>% 
+    stringr::str_replace(" sociales ", " sociales <br>") %>% 
+    stringr::str_replace(" la ", " la <br>") 
+    
+  
+  if (input$NUTS == "0") {
+    tb <- geoj.tb %>% 
+   left_join(tb, by = "ISO_A3")
+    
+    valor_formateado <- prettyNum(round(tb$values,digits=2), big.mark = ",", scientific = FALSE)
+
+    etiqueta_valor <- ifelse(is.na(tb$values), 
+                             "N/A", 
+                             valor_formateado)
+
+    etiqueta_unidad <- ifelse(is.na(tb$values), 
+                              "", 
+                              paste0("<strong>", unidad, "</strong>"))
+    
+etiquetas <-paste(
+   "<strong> ",tb$ADMIN , 
+   "</strong><br>",
+   "<strong>Valor: </strong>", etiqueta_valor, etiqueta_unidad) %>%
+ lapply(htmltools::HTML)
+    
+    mapa = geoj
+    funcion = MapaCoroplético
+    
+  } else {
+    
+    tb <- geoj2.tb %>% 
+      left_join(tb, by = 'geo')
+
+    valor_formateado <- prettyNum(round(tb$values,digits=2), big.mark = ",", scientific = FALSE)
+
+    etiqueta_valor <- ifelse(is.na(tb$values), 
+                             "N/A", 
+                             valor_formateado)
+
+    etiqueta_unidad <- ifelse(is.na(tb$values), 
+                              "", 
+                              paste0("<strong>", unidad, "</strong>"))        
+    
+    
+    etiquetas <-paste(
+    "<strong>code</strong>: ",tb$geo ,
+    "<br><strong>", tb$NUTS_NAME,
+    "</strong><br><strong>Valor: </strong>", etiqueta_valor,"<strong>",etiqueta_unidad,"</strong>")  %>%
+ lapply(htmltools::HTML)
+    
+    mapa = geoj2
+    funcion = MapaCoroplético2
+  }
+  
+  return(list(tb, mapa, etiquetas, funcion, legend_title_break))
+  
+})
+
+```
+
+
+
+Column
+--------------------------------------------
+
+###
+
+
+```{r}
+leaflet::renderLeaflet({
+ # capturamos el resultado del procesado de los inputs 
+ tb <- input.processing.atributo.año.join()[[1]]
+ mapa <- input.processing.atributo.año.join()[[2]]
+ etiquetas <- input.processing.atributo.año.join()[[3]]
+ funcion <- input.processing.atributo.año.join()[[4]]
+ leyenda <- input.processing.atributo.año.join()[[5]]
+ 
+ 
+ 
+ 
+ # dibujamos el mapa 
+ funcion(mapa,tb$values,etiquetas,leyenda)
+})
+
+```
+
+
