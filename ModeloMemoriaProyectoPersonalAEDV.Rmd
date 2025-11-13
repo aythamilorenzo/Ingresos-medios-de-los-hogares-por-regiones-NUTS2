@@ -5,6 +5,9 @@ date: "`r Sys.Date()`"
 output:
   html_document:
     number_sections: true
+    toc: true
+    toc_depth: 3
+    toc_float: true
   pdf_document: default
 ---
 
@@ -46,7 +49,7 @@ library(eurostat)
 library(knitr)
 library(webshot2)
 library(ggrepel)
-
+source("utilidades.R")
 
 
 
@@ -228,7 +231,7 @@ footer {
 
 ```
 
-```{r css_graficas, results='hide', include=FALSE}
+```{r estilo_graficas, results='hide', include=FALSE}
 theme_set(
   theme_minimal(base_family = "serif") +
   theme(
@@ -750,7 +753,7 @@ data.fechas %>%
 A continuación veremos información sobre nuestro dataset secundario que incluye datos de población anual por zonas.
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 dataset.name <- "nama_10r_3popgdp"
 data <- get_eurostat(dataset.name, time_format = "date") %>%
   as_tibble() %>%
@@ -873,7 +876,6 @@ poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>%
   as_tibble() %>% 
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
   rename(poblacion = values)
-
 ```
 
 
@@ -1199,7 +1201,9 @@ datats.spain <- data %>%
   filter(geo == 'ES' & unit == 'EUR_HAB' & na_item == 'B6N' & TIME_PERIOD > 2001) %>%
   select(TIME_PERIOD, values) %>%
   arrange(TIME_PERIOD) %>%
-  as_tsibble(index = TIME_PERIOD) %>%
+  rename(Año = TIME_PERIOD,
+         valores = values) %>% 
+  as_tsibble(index = Año) %>%
   fill_gaps() 
     
 
@@ -1210,7 +1214,7 @@ Sacamos la misma conclusión que de las gráficas, en general la tendencia es ha
 datats.spain %>%
   autoplot(size = 0.7) +
   theme_bw(base_size = 14) +
-  labs(x = "Año", y = "Renta", title = "Evolución de la renta neta por habitante en España")
+  labs(x = "Año", y = "Renta", title = "Evolución de la renta neta por habitante en España", subtitle = "Valores tomados en € por habitante")
 ```
 
 ```{r, results = F}
@@ -1229,14 +1233,21 @@ datats.spain.arima %>%
 
 ```
 
-A continuación vamos a ver como han evolucionado los impuestos en España a lo largo de los años, ya que vamos a trabajar en la unidad `MIO_EUR`, filtraremos a partir del año 2002 ya que fue cuando se introdujo el euro a España.
+A continuación vamos a ver como han evolucionado los impuestos per cápita en España a lo largo de los años, ya que no tenemos datos por habitante, tendremos que normalizar las observaciones medidas en `MIO_EUR` diviendo dichos valores por la población, filtraremos a partir del año 2002 ya que fue cuando se introdujo el euro a España.
 
 ```{r}
 datatsimp.spain <- data %>%
   filter(na_item == 'D5' & geo == 'ES' & unit == 'MIO_EUR' & TIME_PERIOD > 2001) %>%
-  select(TIME_PERIOD, values) %>%
-  arrange(TIME_PERIOD) %>%
-  as_tsibble(index = TIME_PERIOD) %>%
+  left_join(poblacion %>% 
+              select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>%
+  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+  select(-values) %>%
+  rename(values = per.capita) %>%
+  select(TIME_PERIOD, values) %>% 
+  arrange(TIME_PERIOD, values) %>%
+  rename(Año = TIME_PERIOD,
+         valores = values) %>% 
+  as_tsibble(index = Año) %>%
   fill_gaps()
 
 ```
@@ -1245,8 +1256,9 @@ datatsimp.spain <- data %>%
 datatsimp.spain %>%
   autoplot(size = 0.7) +
   theme_bw(base_size = 14) +
-  labs(x = "Año", y = "Nº de impuestos pagados por habitante",
-       title = "Evolución del costo de los impuestos en España")
+  labs(x = "Año", y = "Impuestos pagados en € por habitante",
+       title = "Evolución de impuestos sobre renta y patrimonio en España",
+       subtitle = "Valores per cápita")
 ```
 Haremos una predicción a 5 años.
 ```{r, results = F}
@@ -1261,6 +1273,88 @@ datatsimp.spain.arima %>%
   autoplot(datatsimp.spain) +
   theme_bw(base_size = 14)
 ```
+
+
+Vamos a continuar viendo la evolución y predicción de distintas variables económicas de interés en España.
+
+```{r}
+datatsahorro.spain <- data %>% 
+  filter(na_item == 'B7N' & geo == 'ES' & unit == 'EUR_HAB' & TIME_PERIOD > 2001) %>% 
+  arrange(TIME_PERIOD, values) %>% 
+  rename(Año = TIME_PERIOD,
+         valores = values) %>% 
+  select(Año, valores) %>% 
+  as_tsibble(index = Año) %>% 
+  fill_gaps()
+```
+
+Su evolución es parecida a la de la renta neta y tiene todo el sentido ya que una mayor renta debería estar directamente relacionada con una mayor capacidad de ahorro.
+```{r}
+datatsahorro.spain %>%
+  autoplot(size = 0.7) +
+  theme_bw(base_size = 14) +
+  labs(x = "Año", y = "Ahorro neto en € por habitante",
+       title = "Evolución de impuestos sobre renta y patrimonio en España",
+       subtitle = "Valores per cápita")
+```
+
+Hagamos una predicción a 5 años con ARIMA.
+
+```{r}
+datatsahorro.spain.arima <- datatsahorro.spain %>% 
+  model(ARIMA()) %>% 
+  report(fit)
+```
+
+```{r}
+datatsahorro.spain.arima %>% 
+  forecast(h = '5 years') %>% 
+  autoplot(datatsahorro.spain) + 
+  theme_bw(base_size = 14)
+```
+
+Otro factor interesante puede ser, los ingresos que los españoles reciben a partir de la propiedad de activos, ya que España por lo general se considera un país con una pobre educación financiera. Para ello, de nuevo tenemos que normalizar los valores por población
+```{r}
+datatsactivos.spain <- data %>% 
+  filter(na_item == 'D4', geo == 'ES', TIME_PERIOD > 2001, direct == 'RECV', unit == "MIO_EUR") %>% 
+  left_join(poblacion %>% 
+              select(-freq, -unit), by = c("TIME_PERIOD", "geo")) %>% 
+  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+  select(-values) %>% 
+  rename(Año = TIME_PERIOD,
+         valores = per.capita) %>% 
+  arrange(Año, valores) %>% 
+  select(Año, valores) %>% 
+  as_tsibble(index = Año) %>% 
+  fill_gaps()
+```
+
+Veamos la evolución
+
+```{r}
+datatsactivos.spain %>% 
+  autoplot(size = 0.7) + 
+  theme_bw(base_size = 14) +
+    labs(x = "Año", y = "Ingresos",
+       title = "Evolución de ingresos a partir de activos en España",
+       subtitle = "Valores en € por habitante") 
+```
+
+```{r}
+datatsactivos.spain.arima <- datatsactivos.spain %>% 
+  model(ARIMA()) %>% 
+  report(fit)
+```
+
+```{r}
+datatsactivos.spain.arima %>% 
+  forecast(h = "5 years") %>% 
+  autoplot(datatsactivos.spain) +
+  theme_bw(base_size = 14)
+```
+
+
+
 
 
 
