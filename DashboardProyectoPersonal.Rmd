@@ -227,26 +227,68 @@ Column {.tabset}
 
 
 ```{r}
-div(
-  style = "display: flex; align-items: center; gap: 10px;",
-  tags$label("Indicador:", style = "margin: 0"),
-shiny::selectInput(
-  "Indicador.paises",
-  label = NULL,
-  choices = c(
-    "Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4"
-  ),
-  selected = "B6N"
-))
+output$Indicador.paises.dinamico.ui <- shiny::renderUI({
+  
+  if(input$Unidad.paises == "PPS_EU27_2020_HAB") {
+    opciones <- c("Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N")
+  } else {
+    opciones <- c("Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N",
+      "Remuneración de los asalariados" = "D1",
+      "Prestaciones sociales recibidas" = "D62",
+      "Impuestos sobre renta y patrimonio" = "D5",
+      "Rentas de la propiedad" = "D4")
+  }
+  
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Indicador:", style = "margin: 0"),
+    shiny::selectInput(
+      "Indicador.paises",
+      label = NULL,
+      choices = opciones,
+      selected = "B6N",
+      width = '240px' 
+    )
+  )
+})
 ```
 
 ```{r}
+tags$div(
+  style = "display: flex; flex-wrap: wrap; gap: 20px;", 
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    shiny::uiOutput("Indicador.paises.dinamico.ui") 
+  ),
+
+  # 2. Input de Unidad (Al lado)
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Unidad:", style = "margin: 0"),
+    shiny::selectInput(
+      "Unidad.paises",
+      label = NULL,
+      choices = c(
+        "€ por habitante" = "EUR_HAB",
+        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
+      selected = "EUR_HAB",
+      width = '240px' 
+    )
+  )
+)
+```
+
+
+```{r}
 input.processing.series.temporales <- reactive({
+  
+  if (input$Unidad.paises == 'EUR_HAB') {
+    unidad = "€"
+  } else {
+    unidad = 'PPS'
+  }
   
   if(input$Indicador.paises %in% c('B5N', 'B6N')) {
     
@@ -281,9 +323,8 @@ input.processing.series.temporales <- reactive({
     )
   
       text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"PPS")
+                        "<br>Valor: ",round(tb$values,1),unidad)
   
-  etiqueta.ejey = 'Unidades PPS por habitante'
   
   } else if(input$Indicador.paises %in% c('D62', 'D4')){
     
@@ -324,9 +365,7 @@ input.processing.series.temporales <- reactive({
     rename(values = per.capita)
   
       text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"€")
-  
-  etiqueta.ejey = '€ por habitante'
+                        "<br>Valor: ",round(tb$values,1),unidad)
     
   } else {
     
@@ -366,12 +405,11 @@ input.processing.series.temporales <- reactive({
     rename(values = per.capita)
   
       text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"€")
+                        "<br>Valor: ",round(tb$values,1),unidad)
   
-  etiqueta.ejey = '€ por habitante'
   }
   
-  return (list(tb,text,etiqueta.ejey))
+  return (list(tb,text))
 })
 ```
 
@@ -380,7 +418,6 @@ renderPlotly({
   
   tb <- input.processing.series.temporales()[[1]]
   text <- input.processing.series.temporales()[[2]]
-  etiqueta.ejey <- input.processing.series.temporales()[[3]]
   
   p <- tb %>%
     ggplot(aes(x = TIME_PERIOD,
@@ -396,7 +433,7 @@ renderPlotly({
     facet_wrap(~ full_name,
                labeller = labeller(full_name = label_wrap_gen(width = 15))) +
     theme_minimal() + 
-    labs(x = "Año", y = etiqueta.ejey) + 
+    labs(x = "Año", y = "") + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     theme(panel.spacing.x = unit(1, "lines")) +
     theme(legend.position = "none") +
@@ -411,26 +448,67 @@ renderPlotly({
 
 
 ```{r}
-div(
-  style = "display: flex; align-items: center; gap: 10px;",
-  tags$label("Indicador:", style = "margin: 0"),
-shiny::selectInput(
-  "Indicador.paises2",
-  label = NULL,
-  choices = c(
-    "Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4"
+output$Indicador.paises.dinamico.ui2 <- shiny::renderUI({
+  
+  if(input$Unidad.paises2 == "PPS_EU27_2020_HAB") {
+    opciones <- c("Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N")
+  } else {
+    opciones <- c("Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N",
+      "Remuneración de los asalariados" = "D1",
+      "Prestaciones sociales recibidas" = "D62",
+      "Impuestos sobre renta y patrimonio" = "D5",
+      "Rentas de la propiedad" = "D4")
+  }
+  
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Indicador:", style = "margin: 0"),
+    shiny::selectInput(
+      "Indicador.paises2",
+      label = NULL,
+      choices = opciones,
+      selected = "B6N",
+      width = '240px' 
+    )
+  )
+})
+```
+
+```{r}
+tags$div(
+  style = "display: flex; flex-wrap: wrap; gap: 20px;", 
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    shiny::uiOutput("Indicador.paises.dinamico.ui2") 
   ),
-  selected = "B6N"
-))
+
+  # 2. Input de Unidad (Al lado)
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Unidad:", style = "margin: 0"),
+    shiny::selectInput(
+      "Unidad.paises2",
+      label = NULL,
+      choices = c(
+        "€ por habitante" = "EUR_HAB",
+        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
+      selected = "EUR_HAB",
+      width = '240px' 
+    )
+  )
+)
 ```
 
 ```{r}
 input.processing.series.temporales2 <- reactive({
+  
+  if (input$Unidad.paises2 == 'EUR_HAB') {
+    unidad = "€"
+  } else {
+    unidad = 'PPS'
+  }
   
   if(input$Indicador.paises2 %in% c('B5N', 'B6N')) {
     
@@ -465,9 +543,8 @@ input.processing.series.temporales2 <- reactive({
     )
   
     text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"PPS")
+                        "<br>Valor: ",round(tb$values,1),unidad)
   
-  etiqueta.ejey = 'Unidades PPS por habitante'
   } else if(input$Indicador.paises2 %in% c('D62', 'D4')) {
     
     mid_paises_geo <- data %>%
@@ -507,9 +584,7 @@ input.processing.series.temporales2 <- reactive({
     rename(values = per.capita)
   
   text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"€")
-  
-  etiqueta.ejey = '€ por habitante'
+                        "<br>Valor: ",round(tb$values,1),unidad)
     
   }
     
@@ -551,13 +626,11 @@ input.processing.series.temporales2 <- reactive({
     rename(values = per.capita)
   
     text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"€")
-  
-  etiqueta.ejey = '€ por habitante'
+                        "<br>Valor: ",round(tb$values,1),unidad)
     
   }
   
-  return(list(tb,text,etiqueta.ejey))
+  return(list(tb,text))
 })
 
 ```
@@ -567,8 +640,6 @@ renderPlotly({
   
   tb <- input.processing.series.temporales2()[[1]]
   text <- input.processing.series.temporales2()[[2]]
-  etiqueta.ejey <- input.processing.series.temporales2()[[3]]
-  
   
   p <- tb %>%
     ggplot(aes(x = TIME_PERIOD, 
@@ -585,7 +656,7 @@ renderPlotly({
     facet_wrap(~ full_name,
                labeller = labeller(full_name = label_wrap_gen(width = 15))) +
     theme_minimal() + 
-    labs(x = "Año", y = etiqueta.ejey) + 
+    labs(x = "Año", y = "") + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     theme(panel.spacing.x = unit(1, "lines")) +
     theme(legend.position = "none") +
@@ -599,26 +670,66 @@ renderPlotly({
 ### Países 3
 
 ```{r}
-div(
-  style = "display: flex; align-items: center; gap: 10px;",
-  tags$label("Indicador:", style = "margin: 0"),
-shiny::selectInput(
-  "Indicador.paises3",
-  label = NULL,
-  choices = c(
-    "Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4"
+output$Indicador.paises.dinamico.ui3 <- shiny::renderUI({
+  
+  if(input$Unidad.paises3 == "PPS_EU27_2020_HAB") {
+    opciones <- c("Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N")
+  } else {
+    opciones <- c("Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N",
+      "Remuneración de los asalariados" = "D1",
+      "Prestaciones sociales recibidas" = "D62",
+      "Impuestos sobre renta y patrimonio" = "D5",
+      "Rentas de la propiedad" = "D4")
+  }
+  
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Indicador:", style = "margin: 0"),
+    shiny::selectInput(
+      "Indicador.paises3",
+      label = NULL,
+      choices = opciones,
+      selected = "B6N",
+      width = '240px' 
+    )
+  )
+})
+```
+
+```{r}
+tags$div(
+  style = "display: flex; flex-wrap: wrap; gap: 20px;", 
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    shiny::uiOutput("Indicador.paises.dinamico.ui3") 
   ),
-  selected = "B6N"
-))
+
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Unidad:", style = "margin: 0"),
+    shiny::selectInput(
+      "Unidad.paises3",
+      label = NULL,
+      choices = c(
+        "€ por habitante" = "EUR_HAB",
+        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
+      selected = "EUR_HAB",
+      width = '240px' 
+    )
+  )
+)
 ```
 
 ```{r}
 input.processing.series.temporales3 <- reactive({
+  
+  if (input$Unidad.paises3 == 'EUR_HAB') {
+    unidad = "€"
+  } else {
+    unidad = 'PPS'
+  }
   
   if(input$Indicador.paises3 %in% c('B5N', 'B6N')) {
     
@@ -653,9 +764,8 @@ input.processing.series.temporales3 <- reactive({
     )
   
   text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"PPS")
+                        "<br>Valor: ",round(tb$values,1),unidad)
   
-  etiqueta.ejey = 'Unidades PPS por habitante'
   
   } else if(input$Indicador.paises3 %in% c('D62', 'D4')) {
     
@@ -696,9 +806,8 @@ input.processing.series.temporales3 <- reactive({
     rename(values = per.capita)
   
   text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"€")
-  
-  etiqueta.ejey = '€ por habitante'
+                        "<br>Valor: ",round(tb$values,1),unidad)
+
   
   } else {
     
@@ -738,13 +847,11 @@ input.processing.series.temporales3 <- reactive({
     rename(values = per.capita)
   
     text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),"€")
-  
-  etiqueta.ejey = '€ por habitante'
+                        "<br>Valor: ",round(tb$values,1),unidad)
     
   }
   
-  return(list(tb,text,etiqueta.ejey))
+  return(list(tb,text))
 })
 
 
@@ -756,7 +863,6 @@ renderPlotly({
   
   tb <- input.processing.series.temporales3()[[1]]
   text <- input.processing.series.temporales3()[[2]]
-  etiqueta.ejey <- input.processing.series.temporales3()[[3]]
   
   p <- tb %>%
     ggplot(aes(x = TIME_PERIOD,
@@ -772,7 +878,7 @@ renderPlotly({
     facet_wrap(~ full_name,
                labeller = labeller(full_name = label_wrap_gen(width = 15))) +
     theme_minimal() + 
-    labs(x = "Año", y = etiqueta.ejey) + 
+    labs(x = "Año", y = "") + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     theme(panel.spacing.x = unit(1, "lines")) +
     theme(legend.position = "none") +
@@ -985,7 +1091,7 @@ data <- data %>%
 ```{r}
 input.processing.atributo.año <- reactive({
     
-    
+  
     if(input$Indicador.mapa %in% c('B5N', 'B6N')) {
     tb <- data %>% 
     filter(na_item == input$Indicador.mapa & TIME_PERIOD == input$Año 
@@ -1142,7 +1248,7 @@ Column
 
 ```{r}
 leaflet::renderLeaflet({
- # capturamos el resultado del procesado de los inputs 
+  
  tb <- input.processing.atributo.año.join()[[1]]
  mapa <- input.processing.atributo.año.join()[[2]]
  etiquetas <- input.processing.atributo.año.join()[[3]]
@@ -1150,9 +1256,6 @@ leaflet::renderLeaflet({
  leyenda <- input.processing.atributo.año.join()[[5]]
  
  
- 
- 
- # dibujamos el mapa 
  funcion(mapa,tb$values,etiquetas,leyenda)
 })
 
