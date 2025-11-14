@@ -1377,25 +1377,27 @@ datatsrenta.spain <- data %>%
 
 Sacamos la misma conclusión que de las gráficas, en general la tendencia es hacia arriba excepto en eventos excepcionales como la crisis del 2008 o el covid.
 ```{r}
-datatsrenta.spain %>%
+datatsrenta.spain.plot <- datatsrenta.spain %>%
   autoplot(size = 0.7) +
   theme_bw(base_size = 14) +
-  labs(x = "Año", y = "Renta", title = "Evolución de la renta neta por habitante en España", subtitle = "Valores tomados en € por habitante")
+  labs(x = "Año", y = "Renta", title = "Evolución de la Renta Neta por habitante en España", subtitle = "Valores tomados en € por habitante")
+
+ggplotly(datatsrenta.spain.plot)
 ```
 
 ```{r, results = F}
 datatsrenta.spain.arima <- datatsrenta.spain %>%
   model(ARIMA()) %>%
   report(fit)
-
 ```
 
 Como vemos en la predicción, no se espera que la evolución de la renta sea muy vertical como sucede en otros años.
 ```{r}
-datatsrenta.spain.arima %>%
-  forecast(h = 5) %>%
-  autoplot(datatsrenta.spain) +
-  theme_bw(base_size = 14)
+datatsrenta.spain.arima.pred <- datatsrenta.spain.arima %>%
+  forecast(h = 5) 
+
+datatsrenta.spain.titulo <- "Predicción ARIMA de la evolución de la Renta Neta en España"
+GraficoDinamicoArima95CI(datatsrenta.spain, "Año", "valores", datatsrenta.spain.arima.pred, datatsrenta.spain.titulo)
 
 ```
 
@@ -1407,9 +1409,11 @@ datatsrenta.spain.STL <- datatsrenta.spain %>%
 ```
 
 ```{r}
-datatsrenta.spain.STL %>% 
+datatsrenta.spain.STL.plot <- datatsrenta.spain.STL %>% 
   autoplot() +
   theme_bw(base_size = 14)
+
+ggplotly(datatsrenta.spain.STL.plot)
 ```
 
 
@@ -1434,12 +1438,14 @@ datatsimp.spain <- data %>%
 ```
 
 ```{r}
-datatsimp.spain %>%
+datatsimp.spain.plot <- datatsimp.spain %>%
   autoplot(size = 0.7) +
   theme_bw(base_size = 14) +
   labs(x = "Año", y = "Impuestos pagados en € por habitante",
-       title = "Evolución de impuestos sobre renta y patrimonio en España",
+       title = "Evolución de Impuestos sobre Renta y Patrimonio en España",
        subtitle = "Valores per cápita")
+
+ggplotly(datatsimp.spain.plot)
 ```
 Haremos una predicción a 5 años.
 ```{r message=FALSE, warning=FALSE, results= 'hide'}
@@ -1449,10 +1455,12 @@ datatsimp.spain.arima <- datatsimp.spain %>%
 ```
 
 ```{r}
-datatsimp.spain.arima %>%
-  forecast(h = 5) %>%
-  autoplot(datatsimp.spain) +
-  theme_bw(base_size = 14)
+datatsimp.spain.arima.pred <- datatsimp.spain.arima %>%
+  forecast(h = 5) 
+
+datatsimp.spain.arima.titulo <- "Predicción ARIMA de la evolución de Impuestos sobre Renta y Patrimonio en España"
+
+GraficoDinamicoArima95CI(datatsimp.spain, "Año", "valores", datatsimp.spain.arima.pred, datatsimp.spain.arima.titulo)
 ```
 
 ```{r}
@@ -1463,9 +1471,11 @@ datatsimp.spain.STL <- datatsimp.spain %>%
 ```
 
 ```{r}
-datatsimp.spain.STL %>% 
+datatsimp.spain.STL.plot <- datatsimp.spain.STL %>% 
   autoplot() +
   theme_bw(base_size = 14)
+
+ggplotly(datatsimp.spain.STL.plot)
 ```
 
 
@@ -1486,12 +1496,14 @@ datatsahorro.spain <- data %>%
 
 Su evolución es parecida a la de la renta neta y tiene todo el sentido ya que una mayor renta debería estar directamente relacionada con una mayor capacidad de ahorro.
 ```{r}
-datatsahorro.spain %>%
+datatsahorro.spain.plot <- datatsahorro.spain %>%
   autoplot(size = 0.7) +
   theme_bw(base_size = 14) +
   labs(x = "Año", y = "Ahorro neto en € por habitante",
-       title = "Evolución de impuestos sobre renta y patrimonio en España",
+       title = "Evolución del Ahorro Neto en España",
        subtitle = "Valores per cápita")
+
+ggplotly(datatsahorro.spain.plot)
 ```
 
 Hagamos una predicción a 5 años con ARIMA.
@@ -1503,10 +1515,12 @@ datatsahorro.spain.arima <- datatsahorro.spain %>%
 ```
 
 ```{r}
-datatsahorro.spain.arima %>% 
-  forecast(h = '5 years') %>% 
-  autoplot(datatsahorro.spain) + 
-  theme_bw(base_size = 14)
+datatsahorro.spain.arima.pred <- datatsahorro.spain.arima %>% 
+  forecast(h = '5 years') 
+
+datatsahorro.spain.arima.titulo <- "Predicción ARIMA del Ahorro Neto en España"
+  
+GraficoDinamicoArima95CI(datatsahorro.spain, "Año", "valores", datatsahorro.spain.arima.pred, datatsahorro.spain.arima.titulo)
 ```
 
 ```{r}
@@ -1517,9 +1531,11 @@ datatsahorro.spain.STL <- datatsahorro.spain %>%
 ```
 
 ```{r}
-datatsahorro.spain.STL %>% 
+datatsahorro.spain.STL.plot <- datatsahorro.spain.STL %>% 
   autoplot() +
   theme_bw(base_size = 14)
+
+ggplotly(datatsahorro.spain.STL.plot)
 ```
 
 
@@ -1543,12 +1559,14 @@ datatsactivos.spain <- data %>%
 Veamos la evolución
 
 ```{r}
-datatsactivos.spain %>% 
+datatsactivos.spain.plot <- datatsactivos.spain %>% 
   autoplot(size = 0.7) + 
   theme_bw(base_size = 14) +
     labs(x = "Año", y = "Ingresos",
-       title = "Evolución de ingresos a partir de activos en España",
-       subtitle = "Valores en € por habitante") 
+       title = "Evolución de Ingresos a partir de Activos Fijos en España",
+       subtitle = "Valores en € por habitante")
+
+ggplotly(datatsactivos.spain.plot)
 ```
 
 ```{r message=FALSE, warning=FALSE, results = 'hide'}
@@ -1558,23 +1576,27 @@ datatsactivos.spain.arima <- datatsactivos.spain %>%
 ```
 
 ```{r}
-datatsactivos.spain.arima %>% 
-  forecast(h = "5 years") %>% 
-  autoplot(datatsactivos.spain) +
-  theme_bw(base_size = 14)
+datatsactivos.spain.arima.pred <- datatsactivos.spain.arima %>% 
+  forecast(h = "5 years") 
+
+datatsactivos.spain.arima.titulo <- "Predicción ARIMA de los Ingresos a partir de Activos Fijos en España"
+  
+GraficoDinamicoArima95CI(datatsactivos.spain, "Año", "valores", datatsactivos.spain.arima.pred, datatsactivos.spain.arima.titulo)
 ```
 
 ```{r}
-ingresos.a.partir.de.activos <- datatsactivos.spain$valores
+ingresos <- datatsactivos.spain$valores
 datatsactivos.spain.STL <- datatsactivos.spain %>% 
-  model(STL(ingresos.a.partir.de.activos, robust = TRUE)) %>% 
+  model(STL(ingresos, robust = TRUE)) %>% 
   components()
 ```
 
 ```{r}
-datatsactivos.spain.STL %>% 
+datatsactivos.spain.STL.plot <- datatsactivos.spain.STL %>% 
   autoplot() +
   theme_bw(base_size = 14)
+
+ggplotly(datatsactivos.spain.STL.plot)
 ```
 
 Ahora, nos centraremos en observar la evolución de España junto con la de otros países,
