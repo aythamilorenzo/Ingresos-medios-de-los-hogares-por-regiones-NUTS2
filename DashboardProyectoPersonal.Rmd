@@ -1230,8 +1230,7 @@ etiquetas <-paste(
     
     
     etiquetas <-paste(
-    "<strong>code</strong>: ",tb$geo ,
-    "<br><strong>", tb$NUTS_NAME,
+    "<strong>", tb$NUTS_NAME,
     "</strong><br><strong>Valor: </strong>", etiqueta_valor,"<strong>",etiqueta_unidad,"</strong>")  %>%
  lapply(htmltools::HTML)
     
