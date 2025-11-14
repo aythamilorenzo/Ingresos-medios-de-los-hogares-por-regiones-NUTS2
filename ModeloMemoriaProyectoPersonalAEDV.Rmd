@@ -1043,17 +1043,17 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
 Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, utilizaremos el dataset secundario de población que hemos añadido anteriormente y haremos las operaciones necesarias para normalizar estos valores transformándolos a per cápita. Hay que tener en cuenta que los valores de los impuestos están en millones de euros y los de la población en miles de personas.
 
 ```{r, fig.asp = 0.8}
-datatop10.imp <- data %>%
+data.imp <- data %>%
   filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 0, TIME_PERIOD > 2015 & TIME_PERIOD < 2023) %>%
   select(geo, full_name, TIME_PERIOD, values) %>%
   arrange(desc(values)) 
 
-datatop10.imp <- datatop10.imp %>% 
+data.imp <- data.imp %>% 
   left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
   mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
   arrange(desc(imp.per.capita))
 
-datatop10.imp %>%
+data.imp %>%
   ggplot(aes(x = TIME_PERIOD,
              y = full_name,
              fill=imp.per.capita)) +
@@ -1061,10 +1061,11 @@ datatop10.imp %>%
   scale_fill_gradient(low = "white", 
                       high = "steelblue") +
 geom_text(aes(label = round(imp.per.capita,1)), size = 3.4, color = "black") +
-  labs(title="Impuestos sobre renta y patrimonio pagados per cápita",
+  labs(title="Impuestos sobre renta y patrimonio",
        subtitle = "2016-2022",
        x="Año",
-       y="País")
+       y="País",
+       fill = "Impuestos per cápita")
 ```
 
 Ahora, separemos España en 6 zonas (incluyendo Canarias) y veamos que proporción de la renta total se lleva cada parte. 
@@ -1197,7 +1198,7 @@ Vamos a analizar la evolución de la renta neta por habitante en España. Filtra
 ```{r}
 
 
-datats.spain <- data %>%
+datatsrenta.spain <- data %>%
   filter(geo == 'ES' & unit == 'EUR_HAB' & na_item == 'B6N' & TIME_PERIOD > 2001) %>%
   select(TIME_PERIOD, values) %>%
   arrange(TIME_PERIOD) %>%
@@ -1211,14 +1212,14 @@ datats.spain <- data %>%
 
 Sacamos la misma conclusión que de las gráficas, en general la tendencia es hacia arriba excepto en eventos excepcionales como la crisis del 2008 o el covid.
 ```{r}
-datats.spain %>%
+datatsrenta.spain %>%
   autoplot(size = 0.7) +
   theme_bw(base_size = 14) +
   labs(x = "Año", y = "Renta", title = "Evolución de la renta neta por habitante en España", subtitle = "Valores tomados en € por habitante")
 ```
 
 ```{r, results = F}
-datats.spain.arima <- datats.spain %>%
+datatsrenta.spain.arima <- datatsrenta.spain %>%
   model(ARIMA()) %>%
   report(fit)
 
@@ -1226,12 +1227,27 @@ datats.spain.arima <- datats.spain %>%
 
 Como vemos en la predicción, no se espera que la evolución de la renta sea muy vertical como sucede en otros años.
 ```{r}
-datats.spain.arima %>%
+datatsrenta.spain.arima %>%
   forecast(h = 5) %>%
-  autoplot(datats.spain) +
+  autoplot(datatsrenta.spain) +
   theme_bw(base_size = 14)
 
 ```
+
+```{r}
+renta.neta <- datatsrenta.spain$valores
+datatsrenta.spain.STL <- datatsrenta.spain %>% 
+  model(STL(renta.neta, robust = TRUE)) %>% 
+  components()
+```
+
+```{r}
+datatsrenta.spain.STL %>% 
+  autoplot() +
+  theme_bw(base_size = 14)
+```
+
+
 
 A continuación vamos a ver como han evolucionado los impuestos per cápita en España a lo largo de los años, ya que no tenemos datos por habitante, tendremos que normalizar las observaciones medidas en `MIO_EUR` diviendo dichos valores por la población, filtraremos a partir del año 2002 ya que fue cuando se introdujo el euro a España.
 
@@ -1261,7 +1277,7 @@ datatsimp.spain %>%
        subtitle = "Valores per cápita")
 ```
 Haremos una predicción a 5 años.
-```{r, results = F}
+```{r message=FALSE, warning=FALSE, results= 'hide'}
 datatsimp.spain.arima <- datatsimp.spain %>%
   model(ARIMA()) %>%
   report(fit)
@@ -1273,6 +1289,21 @@ datatsimp.spain.arima %>%
   autoplot(datatsimp.spain) +
   theme_bw(base_size = 14)
 ```
+
+```{r}
+impuestos <- datatsimp.spain$valores
+datatsimp.spain.STL <- datatsimp.spain %>% 
+  model(STL(impuestos, robust = TRUE)) %>% 
+  components()
+```
+
+```{r}
+datatsimp.spain.STL %>% 
+  autoplot() +
+  theme_bw(base_size = 14)
+```
+
+
 
 
 Vamos a continuar viendo la evolución y predicción de distintas variables económicas de interés en España.
@@ -1300,7 +1331,7 @@ datatsahorro.spain %>%
 
 Hagamos una predicción a 5 años con ARIMA.
 
-```{r}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 datatsahorro.spain.arima <- datatsahorro.spain %>% 
   model(ARIMA()) %>% 
   report(fit)
@@ -1312,6 +1343,21 @@ datatsahorro.spain.arima %>%
   autoplot(datatsahorro.spain) + 
   theme_bw(base_size = 14)
 ```
+
+```{r}
+ahorro.neto <- datatsahorro.spain$valores
+datatsahorro.spain.STL <- datatsahorro.spain %>% 
+  model(STL(ahorro.neto, robust = TRUE)) %>% 
+  components()
+```
+
+```{r}
+datatsahorro.spain.STL %>% 
+  autoplot() +
+  theme_bw(base_size = 14)
+```
+
+
 
 Otro factor interesante puede ser, los ingresos que los españoles reciben a partir de la propiedad de activos, ya que España por lo general se considera un país con una pobre educación financiera. Para ello, de nuevo tenemos que normalizar los valores por población
 ```{r}
@@ -1340,7 +1386,7 @@ datatsactivos.spain %>%
        subtitle = "Valores en € por habitante") 
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, results = 'hide'}
 datatsactivos.spain.arima <- datatsactivos.spain %>% 
   model(ARIMA()) %>% 
   report(fit)
@@ -1353,7 +1399,86 @@ datatsactivos.spain.arima %>%
   theme_bw(base_size = 14)
 ```
 
+```{r}
+ingresos.a.partir.de.activos <- datatsactivos.spain$valores
+datatsactivos.spain.STL <- datatsactivos.spain %>% 
+  model(STL(ingresos.a.partir.de.activos, robust = TRUE)) %>% 
+  components()
+```
 
+```{r}
+datatsactivos.spain.STL %>% 
+  autoplot() +
+  theme_bw(base_size = 14)
+```
+
+Ahora, nos centraremos en observar la evolución de España junto con la de otros países,
+para ello esta vez usaremos datos PPS.
+
+```{r}
+datats.evolucion.renta <- data %>% 
+  filter(NUTS == 0 & na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB') %>% 
+  select(full_name, TIME_PERIOD, values) %>% 
+  rename(Paises = full_name,
+         Año = TIME_PERIOD,
+         valores = values) %>% 
+  arrange(Año, valores) %>% 
+  as_tsibble(index = Año, key = Paises) %>% 
+  fill_gaps()
+```
+
+```{r}
+datats.evolucion.renta %>% 
+  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>% 
+  hc_title(text = "Evolución de la Renta Neta por País") %>% 
+  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
+
+```
+
+
+Veamos la evolución del ahorro, hay menos países que tienen datos acerca de esto pero podemos hacer una comparativa igualmente.
+
+```{r}
+datats.evolucion.ahorro <- data %>% 
+  filter(NUTS == 0 & na_item == "B7N" & unit == "PPS_EU27_2020_HAB") %>% 
+  select(full_name, TIME_PERIOD, values) %>% 
+  rename(Paises = full_name,
+         Año = TIME_PERIOD,
+         valores = values) %>%
+  arrange(Año, valores) %>% 
+  as_tsibble(index = Año, key = Paises) %>% 
+  fill_gaps()
+```
+
+```{r}
+datats.evolucion.ahorro %>% 
+  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>% 
+  hc_title(text = "Evolución del Ahorro Neto por País") %>% 
+  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
+```
+
+Por último veremos la evolución del ingreso primario neto.
+
+```{r}
+datats.evolucion.ingresoprimario <- data %>% 
+  filter(NUTS == 0 & na_item == "B5N" & unit == "PPS_EU27_2020_HAB") %>% 
+  select(full_name, TIME_PERIOD, values) %>% 
+  rename(Paises = full_name,
+         Año = TIME_PERIOD,
+         valores = values) %>% 
+  arrange(Año, valores) %>% 
+  as_tsibble(index = Año, key = Paises) %>% 
+  fill_gaps()
+  
+```
+
+```{r}
+datats.evolucion.ingresoprimario %>% 
+  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>%
+  hc_title(text = "Evolución del Ingreso Primario Neto por País") %>% 
+  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
+  
+```
 
 
 
