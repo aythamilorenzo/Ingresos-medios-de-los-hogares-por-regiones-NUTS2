@@ -407,9 +407,14 @@ Para la búsqueda del segundo dataset han existido mas problemas ya que principa
 
 ```{r desc_variables, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
 dataset.name <- "nama_10r_2hhinc"
-data <- get_eurostat(dataset.name, time_format = "date") %>%
-  as_tibble() %>%
-  arrange(TIME_PERIOD, geo)
+# data <- get_eurostat(dataset.name, time_format = "date") %>%
+  # as_tibble() %>%
+  # arrange(TIME_PERIOD, geo)
+
+data <- read.csv("nama_10r_2hhinc.csv") %>% 
+  as_tibble() %>% 
+  mutate(TIME_PERIOD = as.Date(TIME_PERIOD)) %>% 
+  arrange(TIME_PERIOD, geo) 
 ```
 
 ### Descripción de variables categóricas y observaciones
@@ -883,10 +888,22 @@ Al analizar la evolución de la renta en las regiones de España, vemos que en g
 
 ```{r, fig.asp = 1.1}
 data.es <- data %>%
-  filter(na_item == "B6N" & unit == "EUR_HAB" & substr(geo,1,2) == "ES" & NUTS == 2)
+  filter(na_item == "B6N" & unit == "EUR_HAB" & substr(geo,1,2) == "ES" & NUTS == 2) %>% 
+  rename(Año = TIME_PERIOD,
+         valores = values) %>%
+  mutate(
+    grupo_color = ifelse(full_name == "Canarias", "Canarias", "Otras Regiones"),
+    full_name = forcats::fct_relevel(full_name, "Canarias") 
+  )
 
-data.es.plot <- ggplot(data.es, aes(x = TIME_PERIOD, y = values)) +
-  geom_line(color = "#0072B2", linewidth = 0.8) +
+data.es.plot <- ggplot(data.es, aes(x = Año,
+                                    y = valores,
+                                    color = grupo_color,
+                                    group = full_name,
+                                    text = paste("Año: ", Año,
+                                                 "<br>Valores: ", valores, "€"))) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = c("Canarias" = "red", "Otras Regiones" = "#0072B2")) +
   facet_wrap(~ full_name,
              labeller = labeller(full_name = label_wrap_gen(width = 15))) +
   theme_minimal() +
@@ -894,22 +911,31 @@ data.es.plot <- ggplot(data.es, aes(x = TIME_PERIOD, y = values)) +
        subtitle = "Valores en € por habitante",
        x = "Año", y = "Renta disponible") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(panel.spacing.x = unit(1, "lines"))
+  theme(panel.spacing.x = unit(1, "lines")) +
+  theme(panel.spacing.y = unit(2, "lines")) +
+  theme(legend.position = "none")
 
-
-ggplotly(data.es.plot)
+ggplotly(data.es.plot, tooltip = "text")
 ```
 
 Como vemos, en primer lugar se encuentra País Vasco, Canarias se encuentra bastante abajo.
 ```{r}
 data.ahorro.es <- data %>%
   filter(na_item == 'B7N', unit == 'EUR_HAB', substr(geo,1,2) == 'ES', TIME_PERIOD == max(TIME_PERIOD) & NUTS == 2) %>%
-  arrange(values)
+  arrange(values) %>%
+  mutate(
+    grupo_color = ifelse(full_name == "Canarias", "Canarias", "Otros")
+  )
 
-ggplot(data.ahorro.es, aes(x = reorder(full_name, values), 
-                           y = values,
-                           fill = full_name)) +
-  geom_col() +
+data.ahorro.es.plot <- data.ahorro.es %>% 
+  ggplot(aes(x = reorder(full_name, values), 
+             y = values,
+             group = full_name,
+             fill = grupo_color, # Usamos 'fill' para el color de las barras
+             text = paste("Región: ", full_name,
+                          "<br>Valores: ", values, "€"))) +
+  geom_col() + # Quitamos el color fijo
+  scale_fill_manual(values = c("Canarias" = "red", "Otros" = "#0072B2")) + # Asignamos el rojo a Canarias
   coord_flip() +
   theme_minimal() +
   theme(
@@ -924,6 +950,8 @@ ggplot(data.ahorro.es, aes(x = reorder(full_name, values),
     x = NULL,
     y = "Ahorro bruto (€ por habitante)"
   )
+
+ggplotly(data.ahorro.es.plot, tooltip = "text")
 ```
 
 Ahora, vamos a ver cuales son los 10 países con mejores ingresos netos por habitante, esto sin tener en cuenta el costo de vida en cada país.
@@ -938,18 +966,34 @@ data.canarias.españa.renta <- data %>%
 
 data.top10.plot <- rbind(data.top10, data.canarias.españa.renta)
 
-ggplot(data.top10.plot, aes(x = reorder(full_name, values), y = values, fill = values)) +
-  geom_col(width = 0.7, show.legend = FALSE) +          # Barras horizontales y gradiente
-  geom_text(aes(label = scales::comma(round(values,0))), 
-            hjust = -0.1, size = 4, color = "black") +  # Etiquetas sobre las barras
+data.top10.plot <- data.top10.plot %>% 
+  mutate(
+    grupo_color = case_when(
+      full_name == "Spain" ~ "España",
+      full_name == "Canarias" ~ "Canarias",
+      TRUE ~ "Otros"
+    )
+  )
+
+data.top10.plot <- data.top10.plot %>% 
+  ggplot(aes(x = reorder(full_name, values), 
+             y = values,
+             fill = grupo_color, 
+             text = paste("Región: ", full_name,
+                          "<br>Valores: ", values, "€"))) +
+  geom_col(width = 0.7, show.legend = FALSE) + 
   coord_flip() +
-  scale_fill_gradient(low = "#56B4E9", high = "#0072B2") +  # Azul claro a oscuro según valor
+  scale_fill_manual(values = c(
+    "Canarias" = "red", 
+    "España" = "red", 
+    "Otros" = "#0072B2" 
+  )) +
   theme_minimal(base_size = 13) +
   labs(
     title = "Top 10 países (EU) con mayor renta neta disponible",
     subtitle = paste0("Último año disponible: ", max(data.top10$TIME_PERIOD)),
     x = NULL,
-    y = "€ por habitante",
+    y = "€ por habitante"
   ) +
   theme(
     axis.text.y = element_text(size = 11, face = "bold"),
@@ -957,10 +1001,13 @@ ggplot(data.top10.plot, aes(x = reorder(full_name, values), y = values, fill = v
     plot.title = element_text(size = 16, face = "bold"),
     plot.subtitle = element_text(size = 12, color = "grey30"),
     plot.caption = element_text(size = 9, color = "grey50"),
-    panel.grid.major.y = element_blank(),  # elimina líneas horizontales
-    panel.grid.minor = element_blank()
+    panel.grid.major.y = element_blank(), 
+    panel.grid.minor = element_blank(),
+    legend.position = 'none'
   ) +
-  expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
+  expand_limits(y = max(data.top10$values) * 1.1)
+
+ggplotly(data.top10.plot, tooltip = "text")
 ```
 
 Como podemos ver, tener en cuenta el costo de la vida de cada país es importante, las posiciones de algunos países han cambiado como por ejemplo Francia y Bélgica, vemos que España no se aleja tanto de entrar en el top 10.
@@ -976,18 +1023,32 @@ data.canarias.españa.renta.PPS <- data %>%
 
 data.top10PPS.plot <- rbind(data.top10PPS, data.canarias.españa.renta.PPS)
 
-ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill = values)) +
-  geom_col(width = 0.7, show.legend = FALSE) +          # Barras horizontales y gradiente
-  geom_text(aes(label = scales::comma(round(values,0))), 
-            hjust = -0.1, size = 4, color = "black") +  # Etiquetas sobre las barras
+data.top10PPS.plot <- data.top10PPS.plot %>% 
+  mutate(
+    grupo_color = case_when(
+      full_name == "Spain" ~ "España",
+      full_name == "Canarias" ~ "Canarias",
+      TRUE ~ "Otros"
+    )
+  ) %>%
+  ggplot(aes(x = reorder(full_name, values), 
+             y = values,
+             fill = grupo_color, 
+             text = paste("Región: ", full_name,
+                          "<br>Valores: ", values, "€"))) +
+  geom_col(width = 0.7, show.legend = FALSE) + 
   coord_flip() +
-  scale_fill_gradient(low = "#56B4E9", high = "#0072B2") +  # Azul claro a oscuro según valor
+  scale_fill_manual(values = c(
+    "Canarias" = "red", 
+    "España" = "red", 
+    "Otros" = "#0072B2" 
+  )) +
   theme_minimal(base_size = 13) +
   labs(
     title = "Top 10 países (EU) con mayor renta neta disponible",
-    subtitle = paste("Último año disponible: " , max(data.top10$TIME_PERIOD), "(Valores tomados en PPS)"),
+    subtitle = paste("Último año disponible: " , max(data.top10PPS$TIME_PERIOD), "(Valores tomados en PPS)"),
     x = NULL,
-    y = "Unidades PPS por habitante",
+    y = "Unidades PPS por habitante"
   ) +
   theme(
     axis.text.y = element_text(size = 11, face = "bold"),
@@ -995,10 +1056,13 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
     plot.title = element_text(size = 16, face = "bold"),
     plot.subtitle = element_text(size = 12, color = "grey30"),
     plot.caption = element_text(size = 9, color = "grey50"),
-    panel.grid.major.y = element_blank(),  # elimina líneas horizontales
-    panel.grid.minor = element_blank()
+    panel.grid.major.y = element_blank(), 
+    panel.grid.minor = element_blank(),
+    legend.position = 'none'
   ) +
-  expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
+  expand_limits(y = max(data.top10PPS$values) * 1.1) 
+
+ggplotly(data.top10PPS.plot, tooltip = "text")
 ```
 
 Echemos un vistazo al top 10 con peor renta neta por habitante, como se esperaba, España es el país con mejor renta per cápita en este caso. Para el caso de Canarias (región NUTS 2), hay países con peor renta per cápita.
@@ -1015,18 +1079,32 @@ data.canarias.españa.renta.PPS <- data %>%
 
 data.top10PPS.plot <- rbind(data.top10PPS, data.canarias.españa.renta.PPS)
 
-ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill = values)) +
-  geom_col(width = 0.7, show.legend = FALSE) +          # Barras horizontales y gradiente
-  geom_text(aes(label = scales::comma(round(values,0))), 
-            hjust = -0.1, size = 4, color = "black") +  # Etiquetas sobre las barras
+data.top10PPS.plot <- data.top10PPS.plot %>% 
+  mutate(
+    grupo_color = case_when(
+      full_name == "Spain" ~ "España",
+      full_name == "Canarias" ~ "Canarias",
+      TRUE ~ "Otros"
+    )
+  ) %>%
+  ggplot(aes(x = reorder(full_name, values), 
+             y = values,
+             fill = grupo_color, 
+             text = paste("Región: ", full_name,
+                          "<br>Valores: ", values, "€"))) +
+  geom_col(width = 0.7, show.legend = FALSE) + 
   coord_flip() +
-  scale_fill_gradient(low = "#56B4E9", high = "#0072B2") +  # Azul claro a oscuro según valor
+  scale_fill_manual(values = c(
+    "Canarias" = "red", 
+    "España" = "red", 
+    "Otros" = "#0072B2" 
+  )) +
   theme_minimal(base_size = 13) +
   labs(
     title = "Top 10 países (EU) con menor renta neta disponible",
-    subtitle = paste("Último año disponible: " , max(data.top10$TIME_PERIOD), "(Valores tomados en PPS)"),
+    subtitle = paste("Último año disponible: " , max(data.top10PPS$TIME_PERIOD), "(Valores tomados en PPS)"),
     x = NULL,
-    y = "Unidades PPS por habitante",
+    y = "Unidades PPS por habitante"
   ) +
   theme(
     axis.text.y = element_text(size = 11, face = "bold"),
@@ -1034,15 +1112,18 @@ ggplot(data.top10PPS.plot, aes(x = reorder(full_name, values), y = values, fill 
     plot.title = element_text(size = 16, face = "bold"),
     plot.subtitle = element_text(size = 12, color = "grey30"),
     plot.caption = element_text(size = 9, color = "grey50"),
-    panel.grid.major.y = element_blank(),  # elimina líneas horizontales
-    panel.grid.minor = element_blank()
+    panel.grid.major.y = element_blank(), 
+    panel.grid.minor = element_blank(),
+    legend.position = 'none'
   ) +
-  expand_limits(y = max(data.top10$values) * 1.1)  # espacio para las etiquetas
+  expand_limits(y = max(data.top10PPS$values) * 1.1) 
+
+ggplotly(data.top10PPS.plot, tooltip = "text")
 ```
 
 Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, utilizaremos el dataset secundario de población que hemos añadido anteriormente y haremos las operaciones necesarias para normalizar estos valores transformándolos a per cápita. Hay que tener en cuenta que los valores de los impuestos están en millones de euros y los de la población en miles de personas.
 
-```{r, fig.asp = 0.8}
+```{r,fig.asp = 0.9}
 data.imp <- data %>%
   filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 0, TIME_PERIOD > 2015 & TIME_PERIOD < 2023) %>%
   select(geo, full_name, TIME_PERIOD, values) %>%
@@ -1053,19 +1134,23 @@ data.imp <- data.imp %>%
   mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
   arrange(desc(imp.per.capita))
 
-data.imp %>%
+data.imp.plot <- data.imp %>%
   ggplot(aes(x = TIME_PERIOD,
              y = full_name,
-             fill=imp.per.capita)) +
+             fill=imp.per.capita,
+             text = paste("Año: ", TIME_PERIOD,
+                          "<br>Región: ", full_name,
+                          "<br>Valores: ", imp.per.capita))) +
   geom_tile(color = "grey80") +
   scale_fill_gradient(low = "white", 
                       high = "steelblue") +
-geom_text(aes(label = round(imp.per.capita,1)), size = 3.4, color = "black") +
   labs(title="Impuestos sobre renta y patrimonio",
        subtitle = "2016-2022",
        x="Año",
        y="País",
        fill = "Impuestos per cápita")
+
+ggplotly(data.imp.plot, tooltip = "text")
 ```
 
 Ahora, separemos España en 6 zonas (incluyendo Canarias) y veamos que proporción de la renta total se lleva cada parte. 
@@ -1079,15 +1164,19 @@ filter(substr(geo,1,2) == 'ES' & NUTS == 1 & na_item == 'B6N' & unit == 'MIO_EUR
   select(full_name, values, porcentaje)
 
 data.spain.pie %>%
-  ggplot(aes(x = "",
-             y = values,
-             fill = full_name)) +
-  geom_col() +
-  geom_text(aes(x=1.,label = porcentaje),size=4, position = position_stack(vjust = 0.5)) +
-  coord_polar(theta = "y") +
-  theme_void(base_size = 16) +
-  labs(title  = "Proporción de la renta total en España divida por zonas",
-       fill = 'Zona de España')
+  plotly::plot_ly(
+    labels = ~full_name,
+    values = ~values,
+    
+    text =  ~paste("Región: ", data.spain.pie$full_name),
+    textinfo = 'percent',
+    insidetextorientation='radial',
+    hoverinfo = "text") %>% 
+  add_pie(hole = 0.4) %>% 
+  layout(
+    title = list(text = "Distribución de la Renta Neta por Regiones de España")
+  )
+  
 
 
 ```
@@ -1110,17 +1199,23 @@ data.spain.disp <- data %>%
   pivot_wider(names_from = na_item, values_from = values)
 
 
-data.spain.disp %>% 
-ggplot(aes(x = B6N, y = B7N, label = full_name)) +
+data.spain.disp.plot <- data.spain.disp %>% 
+ggplot(aes(x = B6N,
+           y = B7N,
+           label = full_name,
+           text = paste("Región: ", full_name,
+                        "<br>Renta neta: ", B6N, "€",
+                        "<br>Ahorro neto: ", B7N, "€"))) +
   geom_point(color = "#0072B2", size = 3) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
-  geom_text_repel(size = 3, max.overlaps = 20) +
   labs(
     title = "Relación entre renta disponible y ahorro neto",
     x = "Renta disponible (€ por habitante)",
     y = "Ahorro neto (€ por habitante)"
   ) +
   theme_minimal(base_size = 13)
+
+ggplotly(data.spain.disp.plot, tooltip = "text")
 
 ```
 
@@ -1143,11 +1238,14 @@ data.spain.NUTS0.disp <- data %>%
   
   
 
-data.spain.NUTS0.disp %>% 
+data.spain.NUTS0.disp.plot <- data.spain.NUTS0.disp %>% 
   ggplot(aes(x = TIME_PERIOD, 
              y = PPS_EU27_2020_HAB, 
              group = full_name, 
-             color = full_name)) +
+             color = full_name,
+             text = paste("Año: ", TIME_PERIOD,
+                          "<br>Región: ", full_name,
+                          "<br>Valores: ", PPS_EU27_2020_HAB, "PPS"))) +
   geom_line(size = 1) +
   geom_point(size = 2) +
   labs(
@@ -1158,31 +1256,43 @@ data.spain.NUTS0.disp %>%
   ) +
   theme_minimal() +
   theme(legend.position = "right")
+
+ggplotly(data.spain.NUTS0.disp.plot, tooltip = "text")
 ```
 
 El gráfico muestra la distribución de los distintos tipos de ingreso por habitante en las regiones españolas. Se observa que el ingreso primario (B5N) es el más alto y disperso, mientras que el ingreso disponible (B6N) se reduce tras impuestos y transferencias, evidenciando el efecto redistributivo. El ahorro (B7N) presenta mayor variabilidad, reflejando diferencias regionales en la capacidad de ahorro. Los outliers pueden corresponder a regiones con niveles excepcionalmente altos, probablemente Madrid o Cataluña, donde el PIB y las rentas tienden a ser más elevadas.
 
 ```{r}
+label_mapping <- c(
+  "B5N" = "Ingreso Primario Neto",
+  "B6N" = "Ingreso Disponible Neto",
+  "B7N" = "Ahorro Neto"
+)
+
 data.spain.box <- data %>% 
   filter(NUTS == 2 & substr(geo,1,2) == 'ES' & na_item %in% c('B5N', 'B6N', 'B7N') & unit == 'EUR_HAB') %>% 
-  pivot_wider(names_from = unit, values_from = values)
+  pivot_wider(names_from = unit, values_from = values) %>%
+  mutate(
+    nombre_indicador = label_mapping[na_item]
+  )
 
-data.spain.box %>% 
-  ggplot(aes(x = na_item, y = EUR_HAB, fill = na_item)) +
+data.spain.box.plot <- data.spain.box %>% 
+  ggplot(aes(x = nombre_indicador, 
+             y = EUR_HAB,
+             fill = nombre_indicador)) +
   geom_boxplot(alpha = 0.7, color = "black", outlier.color = "red") +
   scale_fill_manual(
-    values = c("B5N" = "#FDAE61", "B6N" = "#2C7BB6", "B7N" = "#66BD63"),
-    labels = c(
-      "B5N" = "Ingreso Primario Neto",
-      "B6N" = "Ingreso Disponible Neto",
-      "B7N" = "Ahorro Neto"
+    values = c(
+      "Ingreso Primario Neto" = "#FDAE61", 
+      "Ingreso Disponible Neto" = "#2C7BB6", 
+      "Ahorro Neto" = "#66BD63"
     )
   ) +
   labs(
     title = "Comparación de tipos de ingreso en regiones españolas",
     subtitle = "Distribución del euro per cápita",
     x = "Tipo de ingreso",
-    y = "Unidades monetarias medidas en euros per cápita",
+    y = "€ por habitante",
     fill = "Tipo de ingreso"
   ) +
   theme_minimal() +
@@ -1190,7 +1300,62 @@ data.spain.box %>%
     plot.title = element_text(face = "bold", size = 13),
     legend.position = "top"
   )
+
+ggplotly(data.spain.box.plot)
 ```
+
+Por último para tener una visión general, veamos unos mapas coropléticos con los valores sobre la renta neta en el último año de las observaciones (2022). Haremos mapas tanto a nivel de NUTS 0 como NUTS 2, para ello cargamos la información necesaria.
+
+```{r}
+geoj <- geojson_read("https://ctim.es/AEDV/data/geo_countries.geojson",  what = "sp")
+geoj.tb <- geoj %>% as_tibble()
+```
+
+
+```{r}
+geoj2 <- geojson_read("https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2024_4326_LEVL_2.geojson", what = 'sp')
+
+geoj2.tb <- geoj2 %>% 
+  as_tibble() %>% 
+  rename(geo = NUTS_ID)
+```
+
+Empecemos por una visión general de la renta neta.
+
+```{r}
+mapa.NUTS0.renta <- data %>% 
+  filter(NUTS == 0, na_item == "B6N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
+
+mapa.NUTS0.renta.join <- geoj.tb %>% 
+  left_join(mapa.NUTS0.renta, by = c("ADMIN" = "full_name"))
+
+etiquetas <- paste( "<strong>", geoj.tb$ADMIN,
+                   "</strong><br><strong>Valor: </strong>", 
+                   mapa.NUTS0.renta.join$values, "<strong>PPS/HAB</strong>") %>% 
+  lapply(htmltools::HTML)
+
+leyenda <- "Renta neta<br>disponible"
+MapaCoroplético(geoj, mapa.NUTS0.renta.join$values, etiquetas, leyenda)
+```
+
+Veamos ahora la renta pero en este caso para regiones NUTS2.
+
+```{r}
+mapa.NUTS2.renta <- data %>% 
+  filter(NUTS == 2, na_item == "B6N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
+
+mapa.NUTS2.renta.join <- geoj2.tb %>% 
+  left_join(mapa.NUTS2.renta, by = "geo")
+
+etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
+                   "</strong><br><strong>Valor: </strong>", 
+                   mapa.NUTS2.renta.join$values, "<strong>PPS/HAB</strong>") %>% 
+  lapply(htmltools::HTML)
+
+leyenda <- "Renta neta<br>disponible"
+MapaCoroplético2(geoj2, mapa.NUTS2.renta.join$values, etiquetas, leyenda)
+```
+
 
 ## Modelado
 
