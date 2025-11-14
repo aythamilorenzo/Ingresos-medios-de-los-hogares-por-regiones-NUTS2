@@ -266,7 +266,7 @@ knitr::opts_chunk$set(
 
 <!-- Todos los proyectos personales tienen que tener un cuadro de mandos (Tema 7 de la asignatura) cuya dirección es similar a la que sigue poniendo tu nº de usuario (en lugar de a2405) y el nombre del Rmd asociado. Los cuadros de mando se alojan en un servidor del DIS y solo se puede acceder a ellos a través de la red de la ULPGC o usando VPN -->
 
-[Cuadro de mandos](http://10.22.143.222:3838/sample-apps/a2629/Dashboard2.Rmd)
+[Cuadro de mandos](http://10.22.143.222:3838/sample-apps/a2629/DashboardProyectoPersonal.Rmd)
 
 
 <!-- Añadir imagen ilustrativa del tema de mi proyecto --> 
@@ -1544,7 +1544,7 @@ p <- SeguimientoActividadesProyecto%>%
   theme(axis.text.x = element_text(angle = 45,hjust=1))+
   labs(x="",y="HORAS TRABAJADAS",title = "TOTAL HORAS TRABAJADAS EN EL PROYECTO POR ACTIVIDAD")
 
-ggplotly(p)
+ggplotly(p, tooltip = "")
   
  
 ```
