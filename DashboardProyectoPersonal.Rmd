@@ -126,7 +126,7 @@ library(eurostat)
 library(knitr)
 library(webshot2)
 library(ggrepel)
-
+source("utilidades.R")
 
 # asociamos funciones a determinadas librerías para evitar posibles errores 
 filter <- dplyr::filter # Filtra filas según condiciones
@@ -1228,6 +1228,8 @@ input.processing.atributo.año <- reactive({
 })
 ```
 
+### 
+
 ```{r}
 shiny::renderTable({
   
@@ -1347,6 +1349,159 @@ leaflet::renderLeaflet({
  funcion(mapa,tb$values,etiquetas,leyenda)
 })
 
+```
+
+ARIMA 
+==================================================
+
+Column {.sidebar data-width=290}
+--------------------------------------------------
+
+
+```{r}
+shiny::uiOutput("Indicador.arima.dinamico")
+
+output$Indicador.arima.dinamico <- shiny::renderUI({
+  if(input$Unidad.arima == "EUR_HAB") {
+    
+    opciones <- c("Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N",
+    "Remuneración de los asalariados" = "D1",
+    "Prestaciones sociales recibidas" = "D62",
+    "Impuestos sobre renta y patrimonio" = "D5",
+    "Rentas de la propiedad" = "D4")
+    
+  } else {
+    
+    opciones <- c("Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N")
+    
+  }
+  
+  shiny::selectInput(
+    "Indicador.arima",
+    label = "Indicador",
+    choices = opciones,
+    selected = "B6N"
+  )
+  
+})
+
+opciones <- data %>% 
+  filter(NUTS == 0)
+
+shiny::selectInput(
+  "Pais",
+  label = "Países (máx 2)",
+  choices = unique(opciones$full_name),
+  selected = c("Spain", "Portugal"),
+  multiple = TRUE
+)
+
+shiny::selectInput(
+  "Unidad.arima",
+  label = "Unidad",
+  choices = c(
+    "€ por habitante" = 'EUR_HAB',
+    "Unidades PPS por habitante" = 'PPS_EU27_2020_HAB'),
+  selected = "EUR_HAB"
+)
+
+shiny::selectInput(
+  "AñoInicialArima", 
+  label = "Año Inicial para cálculo ARIMA",
+  choices = unique(data$TIME_PERIOD) , 
+  selected = first(data$TIME_PERIOD)
+)
+
+numericInput(
+  "Number.forecast.periods",
+  label = "N. Periodos Predicción:",
+  value=5,
+  min=2,
+  max=30,
+  step=1
+)
+
+selectInput(
+  "ArimaParameters", 
+  label = "Parámetros ARIMA p/d/q",
+  choices = c('free', '0/2/0', '1/2/1', '2/2/2', '0/1/0', '1/1/1', '2/1/2'),  
+  selected = 'free'
+)
+
+```
+
+```{r}
+input.processing.arima <- reactive({
+  
+  if(input$Indicador.arima %in% c('B5N', 'B6N')) {
+      
+    tb <- data %>% 
+    filter(na_item == input$Indicador.arima & unit == input$Unidad.arima & NUTS == 0) %>%
+    select(full_name, TIME_PERIOD, values) %>% 
+    rename(Región = full_name,
+           Año = TIME_PERIOD,
+           valores = values) %>%
+    mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>%
+    filter(Región %in% input$Pais[1:2]) %>% 
+    pivot_wider(names_from = Región, values_from = valores) %>% 
+    arrange(desc(Año)) %>%
+   mutate(Año=as.character(Año))
+    
+  } else if(input$Indicador.arima %in% c('D4', 'D62')) {
+    
+        tb <- data %>% 
+    filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0 & direct == 'RECV') %>%
+    select(full_name, TIME_PERIOD, values, geo) %>% 
+    left_join(poblacion %>% 
+                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
+          mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+          select(-values) %>% 
+    rename(Región = full_name,
+           Año = TIME_PERIOD,
+           valores = per.capita) %>%
+    mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>%
+    filter(Región %in% input$Pais[1:2]) %>%
+          select(Año, Región, valores) %>% 
+    pivot_wider(names_from = Región, values_from = valores) %>% 
+    arrange(desc(Año)) %>%
+   mutate(Año=as.character(Año))
+        
+  } else {
+    
+            tb <- data %>% 
+    filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0) %>%
+    select(full_name, TIME_PERIOD, values, geo) %>% 
+    left_join(poblacion %>% 
+                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
+          mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+          select(-values) %>% 
+    rename(Región = full_name,
+           Año = TIME_PERIOD,
+           valores = per.capita) %>%
+    mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>%
+    filter(Región %in% input$Pais[1:2]) %>%
+              select(Año, Región, valores) %>% 
+    pivot_wider(names_from = Región, values_from = valores) %>% 
+    arrange(desc(Año)) %>%
+   mutate(Año=as.character(Año))
+  }
+  
+  
+  return(tb)
+})
+```
+
+
+```{r}
+shiny::renderTable({
+  
+  tb <- input.processing.arima()
+  
+  tb
+  
+})
 ```
 
 
