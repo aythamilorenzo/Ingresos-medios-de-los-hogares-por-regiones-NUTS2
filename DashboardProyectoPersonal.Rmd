@@ -257,6 +257,45 @@ p <-  geoj %>%
 }
 ```
 
+```{r}
+GraficoDinamicoArima95CI <- function(
+ data, # tssible con con los datos originales
+ date, # string con el nombre se la variable temporal en data
+ value, # string con el nombre se la variable numérica en data
+ prediccion, # objeto con la predicción usando ARIMA u otro modelo
+ TITLE # título del gráfico 
+){
+  
+  fc <- prediccion %>%
+  mutate(lower = NA) %>% 
+  mutate(upper = NA) 
+
+  for(k in 1:nrow(fc)){
+    fc$lower[k] <- fc$.mean[k] - 1.96*unlist(fc[[value]][k])[2]
+    fc$upper[k] <- fc$.mean[k] + 1.96*unlist(fc[[value]][k])[2]
+  }
+  
+  data2 <- data 
+  x <- data2[[date]][1]
+  if(!(is.numeric(x) && !inherits(x, "Date") && !inherits(x, "POSIXt"))){
+    data2[[date]] <- as.Date(data2[[date]])
+    fc[[date]] <- as.Date(fc[[date]])
+  }
+  
+
+
+p <- plot_ly() %>%
+  add_lines(x=data2[[date]], y = data2[[value]], name = "Observación", line = list(color = "black")) %>%
+  add_lines(x=fc[[date]], y = fc$.mean, name = "Predicción", line = list(color = "blue")) %>%
+  add_ribbons(x = fc[[date]], ymin = fc$lower, ymax = fc$upper, 
+              name = "95% CI", fillcolor = "rgba(0,0,150,0.2)", line = list(width = 0)) %>%
+  layout(title = TITLE)
+
+return(p) 
+}
+
+```
+
 
 ```{r}
 # dataset.name <- "nama_10r_2hhinc"
@@ -1439,21 +1478,15 @@ input.processing.arima <- reactive({
       
     tb <- data %>% 
     filter(na_item == input$Indicador.arima & unit == input$Unidad.arima & NUTS == 0) %>%
-    select(full_name, TIME_PERIOD, values) %>% 
     rename(Región = full_name,
            Año = TIME_PERIOD,
            valores = values) %>%
-    mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>%
-    filter(Región %in% input$Pais[1:2]) %>% 
-    pivot_wider(names_from = Región, values_from = valores) %>% 
-    arrange(desc(Año)) %>%
-   mutate(Año=as.character(Año))
+    filter(Región %in% input$Pais[1:2]) 
     
   } else if(input$Indicador.arima %in% c('D4', 'D62')) {
     
         tb <- data %>% 
     filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0 & direct == 'RECV') %>%
-    select(full_name, TIME_PERIOD, values, geo) %>% 
     left_join(poblacion %>% 
                 select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
           mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
@@ -1461,18 +1494,13 @@ input.processing.arima <- reactive({
     rename(Región = full_name,
            Año = TIME_PERIOD,
            valores = per.capita) %>%
-    mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>%
-    filter(Región %in% input$Pais[1:2]) %>%
-          select(Año, Región, valores) %>% 
-    pivot_wider(names_from = Región, values_from = valores) %>% 
-    arrange(desc(Año)) %>%
-   mutate(Año=as.character(Año))
+    filter(Región %in% input$Pais[1:2]) 
+         
         
   } else {
     
             tb <- data %>% 
     filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0) %>%
-    select(full_name, TIME_PERIOD, values, geo) %>% 
     left_join(poblacion %>% 
                 select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
           mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
@@ -1480,12 +1508,8 @@ input.processing.arima <- reactive({
     rename(Región = full_name,
            Año = TIME_PERIOD,
            valores = per.capita) %>%
-    mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>%
-    filter(Región %in% input$Pais[1:2]) %>%
-              select(Año, Región, valores) %>% 
-    pivot_wider(names_from = Región, values_from = valores) %>% 
-    arrange(desc(Año)) %>%
-   mutate(Año=as.character(Año))
+    filter(Región %in% input$Pais[1:2]) 
+             
   }
   
   
@@ -1496,12 +1520,92 @@ input.processing.arima <- reactive({
 
 ```{r}
 shiny::renderTable({
-  
   tb <- input.processing.arima()
   
-  tb
+   tb %>% 
+     mutate(valores=prettyNum(round(valores,1),big.mark = ",")) %>% 
+          select(Año, Región, valores) %>% 
+    pivot_wider(names_from = Región, values_from = valores) %>% 
+    arrange(desc(Año)) %>%
+   mutate(Año=as.character(Año))
+})
+```
+
+
+Column
+------------------------------------------
+
+###
+
+```{r}
+renderPlotly({
+  
+  req(data)
+  tb <- input.processing.arima()
+  ts <- tb %>% 
+    select(Año, Región, valores) %>% 
+    filter(Región %in% input$Pais[1]) %>% 
+    mutate(Año = as.numeric(Año)) %>% 
+    as_tsibble(index = Año, key = Región) %>% 
+    fill_gaps()
+  
+    if(input$ArimaParameters == 'free'){
+      
+   arima <- ts %>%
+     filter(Año >= input$AñoInicialArima) %>%
+     model(ARIMA(valores)) 
+    } else {
+   p <- as.numeric(substr(input$ArimaParameters,1,1))
+   d <- as.numeric(substr(input$ArimaParameters,3,3))
+   q <- as.numeric(substr(input$ArimaParameters,5,5))
+   arima <-  ts %>%
+   filter(Año >= input$AñoInicialArima) %>%
+   model(ARIMA(valores ~ 1 + pdq(p,d,q))) 
+   }
+    
+ forecast <- arima %>%
+   forecast(h= input$Number.forecast.periods)
+ 
+ GraficoDinamicoArima95CI(ts, "Año", "valores", forecast, input$Pais[1])
   
 })
 ```
 
+
+###
+
+
+```{r}
+renderPlotly({
+  
+  req(data)
+  tb <- input.processing.arima()
+  ts <- tb %>% 
+    select(Año, Región, valores) %>%  
+    filter(Región %in% input$Pais[2]) %>% 
+    mutate(Año = as.numeric(Año)) %>% 
+    as_tsibble(index = Año, key = Región) %>% 
+    fill_gaps()
+  
+    if(input$ArimaParameters == 'free'){
+      
+   arima <- ts %>%
+     filter(Año >= input$AñoInicialArima) %>%
+     model(ARIMA(valores)) 
+    } else {
+   p <- as.numeric(substr(input$ArimaParameters,1,1))
+   d <- as.numeric(substr(input$ArimaParameters,3,3))
+   q <- as.numeric(substr(input$ArimaParameters,5,5))
+   arima <-  ts %>%
+   filter(Año >= input$AñoInicialArima) %>%
+   model(ARIMA(valores ~ 1 + pdq(p,d,q))) 
+   }
+    
+ forecast <- arima %>%
+   forecast(h= input$Number.forecast.periods)
+ 
+ GraficoDinamicoArima95CI(ts, "Año", "valores", forecast, input$Pais[2])
+ 
+})
+```
 
