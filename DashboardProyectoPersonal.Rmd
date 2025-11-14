@@ -15,6 +15,94 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{css estilo, results = 'asis', echo = FALSE}
+<style>
+
+/* --- 1. IMPORTACIÓN DE FUENTE MODERNA --- */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap");
+
+/* --- 2. ESTILO GENERAL Y FONDO --- */
+body {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 400; 
+    font-size: 1em; 
+    color: #2c3e50; 
+    background-color: #f0f4f8; 
+}
+
+/* --- 3. CABECERA Y NAVEGACIÓN --- */
+.navbar {
+    background-color: #0072B2 !important; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+}
+.navbar-brand, .navbar-nav > li > a {
+    color: #ffffff !important;
+    font-weight: 600;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Transición suave */
+}
+
+/* --- NUEVAS REGLAS DE HOVER Y TRANSICIÓN --- */
+
+/* 1. Efecto HOVER: Resalta en blanco */
+.navbar-nav > li > a:hover {
+    color: #0072B2 !important; /* Texto cambia a azul corporativo */
+    background-color: #ffffff !important; /* Fondo cambia a blanco */
+    border-radius: 6px; 
+}
+
+/* 2. Regla para la Pestaña Activa (se mantiene blanca) */
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    color: #0072B2 !important; 
+    background-color: #ffffff !important;
+    font-weight: 700;
+    border-radius: 8px 8px 0 0;
+}
+/* Asegurar que la pestaña activa no pierda el estilo al hacer hover */
+.nav-tabs>li.active>a:hover {
+    background-color: #ffffff !important; 
+    color: #0072B2 !important;
+}
+
+/* --- 4. ESTILO DE LAS CAJAS/PANELES (TARJETAS FLOTANTES) --- */
+.box, .panel-default {
+    border: none !important;
+    border-radius: 12px; 
+    background-color: #ffffff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); 
+    margin-bottom: 25px;
+    padding: 15px;
+}
+
+/* 5. TÍTULOS Y CONTROLES */
+.panel-title {
+    color: #0072B2; 
+    font-weight: 700; 
+    font-size: 1.1em; 
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f4f8;
+}
+.shiny-input-container label {
+    font-weight: 600;
+    color: #34495e;
+}
+.selectize-input {
+    border-radius: 6px;
+    border: 1px solid #dddddd;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); 
+}
+.slider-animate-button, .slider-track-high {
+    background-color: #0072B2 !important; 
+}
+/* Estilo para la leyenda del mapa */
+.legend.leaflet-control {
+    border-radius: 10px !important;
+    padding: 12px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+</style>
+```
+
+
 ```{r global, include=FALSE}
 # carga de librerías
 library(DT)
