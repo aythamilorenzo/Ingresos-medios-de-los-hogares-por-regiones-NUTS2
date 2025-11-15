@@ -1592,3 +1592,115 @@ renderPlotly({
  
 })
 ```
+
+
+Análisis de Atributos
+==================================================
+
+Column {.tabset}
+--------------------------------------------------
+
+
+```{r}
+tags$div(
+  style = "display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; padding-left: 20px; padding-top: 20px", 
+  
+  # 1. Input: Año (Mantiene tu estructura de alineación de etiqueta)
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Año:", style = "margin: 0"),
+    shiny::selectInput(
+      "Año.analisis",
+      label = NULL,
+      choices = unique(data$TIME_PERIOD),
+      selected = last(data$TIME_PERIOD),
+      width = '140px' 
+    )
+  ),
+  
+  # 2. Input: NUTS (Alineado horizontalmente)
+  tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("NUTS:", style = "margin: 0"),
+    shiny::selectInput(
+      "NUTS.analisis",
+      label = NULL,
+      choices = c("0", "2"),
+      selected = "0",
+      width = '100px'
+    )
+  ),
+  
+    tags$div(
+    style = "display: flex; align-items: center; gap: 10px;",
+    tags$label("Dirección de flujo:", style = "margin: 0"),
+    shiny::selectInput(
+      "Direct.analisis",
+      label = NULL,
+      choices = c(
+      "Balance" = "BAL",
+      "Pagado" = "PAID",
+      "Recibido" = "RECV"),
+      selected = "PAID",
+      width = '100px'
+    )
+  )
+)
+```
+
+### Atributos originales
+
+```{r}
+    
+
+shiny::renderTable({
+  
+mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
+"D61" = "cotizaciones_sociales (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
+
+  tb <- data %>% 
+    filter(TIME_PERIOD == input$Año.analisis & NUTS == input$NUTS.analisis & unit == "MIO_EUR", direct == input$Direct.analisis) %>% 
+    left_join(poblacion %>% select(-freq, -unit), by = c("geo", "TIME_PERIOD")) %>% 
+    mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+    select(-values) %>% 
+    rename(values = per.capita) %>% 
+    select(-TIME_PERIOD, -freq, -ISO_A3, -unit, -NUTS, -direct, -geo, -poblacion) %>% 
+    
+    # Aplicar el mapeo de códigos (D5 -> IMPUESTOS_S_R)
+    mutate(na_item = dplyr::recode(na_item, !!!mapa_codigos_cortos)) %>%
+    
+    pivot_wider(names_from = na_item, values_from = values) %>% 
+    rename(Región = full_name)
+    
+  # Formatear la tabla final para display
+  tb %>%
+    mutate(across(-Región, ~ prettyNum(round(., 2), big.mark = ",")))
+})
+```
+
+### Matriz correl.
+
+```{r}
+renderPlotly({
+  
+mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
+"D61" = "cotizaciones_sociales (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
+  
+  tb <- data %>% 
+    filter(TIME_PERIOD == input$Año.analisis & NUTS == input$NUTS.analisis & unit == "MIO_EUR", direct == input$Direct.analisis) %>% 
+    left_join(poblacion %>% 
+                select(-freq, -unit), by = c("geo", "TIME_PERIOD")) %>% 
+    mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+    select(-values) %>% 
+    rename(values = per.capita) %>% 
+    select(-TIME_PERIOD, -freq, -ISO_A3, -unit, -NUTS, -direct, -geo, -poblacion) %>% 
+    mutate(na_item = dplyr::recode(na_item, !!!mapa_codigos_cortos)) %>%
+    pivot_wider(names_from = na_item, values_from = values) %>% 
+    rename(Región = full_name)
+  
+ tb %>%
+  dplyr::select(-Región) %>% # eliminamos de la tabla las variables no-numéricas 
+  cor(use='complete.obs') %>% # cálculo matriz correlación eliminando NA previamente
+  plot_correlation(show_values = TRUE) 
+})
+```
