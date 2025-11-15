@@ -119,3 +119,40 @@ GraficoDinamicoArima95CI <- function(
   return(p) 
 }
 
+
+
+plot_correlation <- function(
+    M, # matriz de correlación
+    show_values = TRUE # flat para controlar si se imprimen los valores en las celdas
+) {
+  
+  # Texto dentro de la celda (2 decimales)
+  cell_text <- round(M, 2)
+  
+  # Escala personalizada: rojo -> blanco -> azul
+  custom_colors <- list(
+    c(0, "red"),    # mínimo (-1) → azul
+    c(0.5, "white"),# 0 → blanco
+    c(1, "steelblue")    # máximo (+1) → rojo
+  )
+  
+  # Crear heatmap interactivo
+  plot_ly(
+    x = colnames(M),
+    y = rownames(M),
+    z = M,
+    type = "heatmap",
+    colorscale = custom_colors,
+    zmin = -1,
+    zmax = 1,
+    text = if (show_values) cell_text else NULL,
+    texttemplate = if (show_values) "%{text}" else NULL,
+    textfont = list(color = "black"),
+    hovertemplate = "X: %{x}<br>Y: %{y}<br>Correlación: %{z:.4f}<extra></extra>"
+  ) %>%
+    layout(
+      title = "Matriz de correlación interactiva",
+      xaxis = list(title = "", tickangle = 45),
+      yaxis = list(title = "", autorange = "reversed")
+    )
+}
