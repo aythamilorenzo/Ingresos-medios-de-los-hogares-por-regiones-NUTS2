@@ -1273,25 +1273,44 @@ ARIMA
 Column {.sidebar data-width=290}
 --------------------------------------------------
 
-
 ```{r}
-shiny::uiOutput("Indicador.arima.dinamico")
+
+shiny::selectInput(
+ "Scope",
+ label = "Alcance del Análisis:",
+ choices = c("Países", "Provincias España"),
+ selected = "Países"
+)
+
 
 output$Indicador.arima.dinamico <- shiny::renderUI({
-  if(input$Unidad.arima == "EUR_HAB") {
+  
+  if(input$Scope == "Países") {
+    # Lógica para PAÍSES (Depende de input$Unidad.arima)
+    if(input$Unidad.arima == "EUR_HAB") {
+      opciones <- c("Ingreso primario neto" = "B5N",
+        "Renta disponible neta" = "B6N",
+        "Remuneración de los asalariados" = "D1",
+        "Prestaciones sociales recibidas" = "D62",
+        "Impuestos sobre renta y patrimonio" = "D5",
+        "Rentas de la propiedad" = "D4")
+    } else {
+      opciones <- c("Ingreso primario neto" = "B5N",
+        "Renta disponible neta" = "B6N")
+    }
+    
+  } else {
+    # Lógica para PROVINCIAS ESPAÑA (Unidad Fija: EUR_HAB)
     
     opciones <- c("Ingreso primario neto" = "B5N",
     "Renta disponible neta" = "B6N",
+    "Ahorro neto" = 'B7N',
     "Remuneración de los asalariados" = "D1",
     "Prestaciones sociales recibidas" = "D62",
     "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4")
-    
-  } else {
-    
-    opciones <- c("Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N")
-    
+    "Rentas de la propiedad" = "D4",
+    "Gasto en consumo final" = "P3",
+    "Inversión en activos fijos" = "P51C")
   }
   
   shiny::selectInput(
@@ -1300,20 +1319,26 @@ output$Indicador.arima.dinamico <- shiny::renderUI({
     choices = opciones,
     selected = "B6N"
   )
-  
 })
+
+shiny::uiOutput("Indicador.arima.dinamico")
 
 opciones <- data %>% 
   filter(NUTS == 0)
 
+conditionalPanel(
+  condition = "input.Scope == 'Países'",
 shiny::selectInput(
   "Pais",
   label = "Países (máx 2)",
   choices = unique(opciones$full_name),
   selected = c("Spain", "Portugal"),
   multiple = TRUE
+  )
 )
 
+conditionalPanel(
+  condition = "input.Scope == 'Países'",
 shiny::selectInput(
   "Unidad.arima",
   label = "Unidad",
@@ -1321,6 +1346,21 @@ shiny::selectInput(
     "€ por habitante" = 'EUR_HAB',
     "Unidades PPS por habitante" = 'PPS_EU27_2020_HAB'),
   selected = "EUR_HAB"
+  )
+)
+
+opciones_prov_full <- data %>%
+ filter(substr(geo, 1, 2) == 'ES' & NUTS == 2) # Usamos las NUTS 2 de España
+
+conditionalPanel(
+  condition = "input.Scope == 'Provincias España'",
+  shiny::selectInput(
+ "Provincia", 
+ label = "Provincias (múltiples)",
+ choices = unique(opciones_prov_full$full_name), 
+ selected = c("Canarias", "Andalucía"),
+ multiple = TRUE
+  )
 )
 
 shiny::selectInput(
@@ -1351,6 +1391,7 @@ selectInput(
 ```{r}
 input.processing.arima <- reactive({
   
+  if (input$Scope == 'Países') {
   if(input$Indicador.arima %in% c('B5N', 'B6N')) {
       
     tb <- data %>% 
@@ -1389,6 +1430,42 @@ input.processing.arima <- reactive({
              
   }
   
+  } else if(input$Indicador.arima %in% c('B5N', 'B6N', 'B7N')) {
+      
+      tb <- data %>% 
+        filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'EUR_HAB') %>% 
+        rename(Región = full_name,
+               Año = TIME_PERIOD,
+               valores = values) %>% 
+        filter(Región %in% input$Provincia[1:2])
+    } else if(input$Indicador.arima %in% c('D4', 'D62')) {
+      
+      tb <- data %>% 
+        filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'MIO_EUR' & direct == 'RECV') %>%
+        left_join(poblacion %>% 
+                    select(-freq, -unit), by = c("TIME_PERIOD", "geo")) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(Región = full_name,
+               Año = TIME_PERIOD,
+               valores = per.capita) %>% 
+        filter(Región %in% input$Provincia[1:2])
+    
+    } else {
+      
+      tb <- data %>% 
+        filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'MIO_EUR') %>%
+        left_join(poblacion %>% 
+                    select(-freq, -unit), by = c("TIME_PERIOD", "geo")) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(Región = full_name,
+               Año = TIME_PERIOD,
+               valores = per.capita) %>% 
+        filter(Región %in% input$Provincia[1:2])
+      
+    }
+  
   
   return(tb)
 })
@@ -1409,7 +1486,7 @@ shiny::renderTable({
 ```
 
 
-Column
+Column 
 ------------------------------------------
 
 ###
@@ -1419,6 +1496,8 @@ renderPlotly({
   
   req(data)
   tb <- input.processing.arima()
+  if(input$Scope == "Países") {
+    
   ts <- tb %>% 
     select(Año, Región, valores) %>% 
     filter(Región %in% input$Pais[1]) %>% 
@@ -1426,6 +1505,19 @@ renderPlotly({
     as_tsibble(index = Año, key = Región) %>% 
     fill_gaps()
   
+  titulo <- input$Pais[1]
+  
+  } else {
+    
+    ts <- tb %>% 
+    select(Año, Región, valores) %>% 
+    filter(Región %in% input$Provincia[1]) %>% 
+    mutate(Año = as.numeric(Año)) %>% 
+    as_tsibble(index = Año, key = Región) %>% 
+    fill_gaps()
+    
+  titulo <- paste(input$Provincia[1], "(€ por habitante)")  
+  }
     if(input$ArimaParameters == 'free'){
       
    arima <- ts %>%
@@ -1443,7 +1535,7 @@ renderPlotly({
  forecast <- arima %>%
    forecast(h= input$Number.forecast.periods)
  
- GraficoDinamicoArima95CI(ts, "Año", "valores", forecast, input$Pais[1])
+ GraficoDinamicoArima95CI(ts, "Año", "valores", forecast, titulo)
   
 })
 ```
@@ -1457,12 +1549,27 @@ renderPlotly({
   
   req(data)
   tb <- input.processing.arima()
+  if(input$Scope == "Países") {
+    
   ts <- tb %>% 
-    select(Año, Región, valores) %>%  
+    select(Año, Región, valores) %>% 
     filter(Región %in% input$Pais[2]) %>% 
     mutate(Año = as.numeric(Año)) %>% 
     as_tsibble(index = Año, key = Región) %>% 
     fill_gaps()
+  
+  titulo <- input$Pais[2]
+  
+  } else {
+    
+    ts <- tb %>% 
+    select(Año, Región, valores) %>% 
+    filter(Región %in% input$Provincia[2]) %>% 
+    mutate(Año = as.numeric(Año)) %>% 
+    as_tsibble(index = Año, key = Región) %>% 
+    fill_gaps()
+  titulo <- paste(input$Provincia[2], "(€ por habitante)")  
+  }
   
     if(input$ArimaParameters == 'free'){
       
@@ -1481,8 +1588,7 @@ renderPlotly({
  forecast <- arima %>%
    forecast(h= input$Number.forecast.periods)
  
- GraficoDinamicoArima95CI(ts, "Año", "valores", forecast, input$Pais[2])
+ GraficoDinamicoArima95CI(ts, "Año", "valores", forecast, titulo)
  
 })
 ```
-
