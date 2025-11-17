@@ -895,7 +895,7 @@ renderPlotly({
 
 
 
-### Provincias España
+### Comunidades España
 
 ```{r}
 div(
@@ -920,7 +920,7 @@ shiny::selectInput(
 ```
 
 ```{r}
-input.processing.series.temporales.provincias <- reactive({
+input.processing.series.temporales.Comunidades <- reactive({
   
   if(input$Indicador %in% c('B5N', 'B6N', 'B7N')) {
     
@@ -959,7 +959,7 @@ input.processing.series.temporales.provincias <- reactive({
 ```{r}
 renderPlotly({
   
-  tb <- input.processing.series.temporales.provincias()
+  tb <- input.processing.series.temporales.Comunidades()
   
   tb.plot <- tb %>% 
     mutate(grupo_color = ifelse(geo == "ES70", "Canarias", "Otras Regiones"),
@@ -1278,7 +1278,7 @@ Column {.sidebar data-width=290}
 shiny::selectInput(
  "Scope",
  label = "Alcance del Análisis:",
- choices = c("Países", "Provincias España"),
+ choices = c("Países", "Comunidades España"),
  selected = "Países"
 )
 
@@ -1300,7 +1300,7 @@ output$Indicador.arima.dinamico <- shiny::renderUI({
     }
     
   } else {
-    # Lógica para PROVINCIAS ESPAÑA (Unidad Fija: EUR_HAB)
+    # Lógica para Comunidades ESPAÑA (Unidad Fija: EUR_HAB)
     
     opciones <- c("Ingreso primario neto" = "B5N",
     "Renta disponible neta" = "B6N",
@@ -1353,10 +1353,10 @@ opciones_prov_full <- data %>%
  filter(substr(geo, 1, 2) == 'ES' & NUTS == 2) # Usamos las NUTS 2 de España
 
 conditionalPanel(
-  condition = "input.Scope == 'Provincias España'",
+  condition = "input.Scope == 'Comunidades España'",
   shiny::selectInput(
- "Provincia", 
- label = "Provincias (múltiples)",
+ "Comunidad", 
+ label = "Comunidades (múltiples)",
  choices = unique(opciones_prov_full$full_name), 
  selected = c("Canarias", "Andalucía"),
  multiple = TRUE
@@ -1437,7 +1437,7 @@ input.processing.arima <- reactive({
         rename(Región = full_name,
                Año = TIME_PERIOD,
                valores = values) %>% 
-        filter(Región %in% input$Provincia[1:2])
+        filter(Región %in% input$Comunidad[1:2])
     } else if(input$Indicador.arima %in% c('D4', 'D62')) {
       
       tb <- data %>% 
@@ -1449,7 +1449,7 @@ input.processing.arima <- reactive({
         rename(Región = full_name,
                Año = TIME_PERIOD,
                valores = per.capita) %>% 
-        filter(Región %in% input$Provincia[1:2])
+        filter(Región %in% input$Comunidad[1:2])
     
     } else {
       
@@ -1462,7 +1462,7 @@ input.processing.arima <- reactive({
         rename(Región = full_name,
                Año = TIME_PERIOD,
                valores = per.capita) %>% 
-        filter(Región %in% input$Provincia[1:2])
+        filter(Región %in% input$Comunidad[1:2])
       
     }
   
@@ -1511,12 +1511,12 @@ renderPlotly({
     
     ts <- tb %>% 
     select(Año, Región, valores) %>% 
-    filter(Región %in% input$Provincia[1]) %>% 
+    filter(Región %in% input$Comunidad[1]) %>% 
     mutate(Año = as.numeric(Año)) %>% 
     as_tsibble(index = Año, key = Región) %>% 
     fill_gaps()
     
-  titulo <- paste(input$Provincia[1], "(€ por habitante)")  
+  titulo <- paste(input$Comunidad[1], "(€ por habitante)")  
   }
     if(input$ArimaParameters == 'free'){
       
@@ -1564,11 +1564,11 @@ renderPlotly({
     
     ts <- tb %>% 
     select(Año, Región, valores) %>% 
-    filter(Región %in% input$Provincia[2]) %>% 
+    filter(Región %in% input$Comunidad[2]) %>% 
     mutate(Año = as.numeric(Año)) %>% 
     as_tsibble(index = Año, key = Región) %>% 
     fill_gaps()
-  titulo <- paste(input$Provincia[2], "(€ por habitante)")  
+  titulo <- paste(input$Comunidad[2], "(€ por habitante)")  
   }
   
     if(input$ArimaParameters == 'free'){
