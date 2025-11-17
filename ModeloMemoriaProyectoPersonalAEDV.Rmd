@@ -954,63 +954,8 @@ data.ahorro.es.plot <- data.ahorro.es %>%
 ggplotly(data.ahorro.es.plot, tooltip = "text")
 ```
 
-Ahora, vamos a ver cuales son los 10 países con mejores ingresos netos por habitante, esto sin tener en cuenta el costo de vida en cada país.
-```{r}
-data.top10 <- data %>%
-  filter(na_item == 'B6N' & unit == 'EUR_HAB' & NUTS == 0 & TIME_PERIOD == max(TIME_PERIOD)) %>%
-  arrange(desc(values)) %>%
-  head(n = 10)
 
-data.canarias.españa.renta <- data %>% 
-  filter(na_item == 'B6N' & unit == 'EUR_HAB' & full_name %in% c('Spain', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & NUTS != 1)
-
-data.top10.plot <- rbind(data.top10, data.canarias.españa.renta)
-
-data.top10.plot <- data.top10.plot %>% 
-  mutate(
-    grupo_color = case_when(
-      full_name == "Spain" ~ "España",
-      full_name == "Canarias" ~ "Canarias",
-      TRUE ~ "Otros"
-    )
-  )
-
-data.top10.plot <- data.top10.plot %>% 
-  ggplot(aes(x = reorder(full_name, values), 
-             y = values,
-             fill = grupo_color, 
-             text = paste("Región: ", full_name,
-                          "<br>Valores: ", values, "€"))) +
-  geom_col(width = 0.7, show.legend = FALSE) + 
-  coord_flip() +
-  scale_fill_manual(values = c(
-    "Canarias" = "red", 
-    "España" = "red", 
-    "Otros" = "#0072B2" 
-  )) +
-  theme_minimal(base_size = 13) +
-  labs(
-    title = "Top 10 países (EU) con mayor renta neta disponible",
-    subtitle = paste0("Último año disponible: ", max(data.top10$TIME_PERIOD)),
-    x = NULL,
-    y = "€ por habitante"
-  ) +
-  theme(
-    axis.text.y = element_text(size = 11, face = "bold"),
-    axis.text.x = element_text(size = 10),
-    plot.title = element_text(size = 16, face = "bold"),
-    plot.subtitle = element_text(size = 12, color = "grey30"),
-    plot.caption = element_text(size = 9, color = "grey50"),
-    panel.grid.major.y = element_blank(), 
-    panel.grid.minor = element_blank(),
-    legend.position = 'none'
-  ) +
-  expand_limits(y = max(data.top10$values) * 1.1)
-
-ggplotly(data.top10.plot, tooltip = "text")
-```
-
-Como podemos ver, tener en cuenta el costo de la vida de cada país es importante, las posiciones de algunos países han cambiado como por ejemplo Francia y Bélgica, vemos que España no se aleja tanto de entrar en el top 10.
+Ahora vamos a ver un top 10 de los países con mejor renta neta por habitante medido en unidades PPS que nos permitirán hacer una comparación justa entre países.
 
 ```{r}
 data.top10PPS <- data %>%
