@@ -145,7 +145,7 @@ selectInput <- shiny::selectInput
 ```
 
 ```{r}
-geoj <- geojson_read("https://ctim.es/AEDV/data/geo_countries.geojson",  what = "sp")
+geoj <- geojson_read("https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2024_4326_LEVL_0.geojson",  what = "sp")
 geoj.tb <- geoj %>% as_tibble()
 ```
 
@@ -613,22 +613,7 @@ shiny::sliderInput(
 )
 ```
 
-```{r}
-iso_map <- tibble::tribble(
-  ~geo, ~ISO_A3,
-  "AT", "AUT", "BE", "BEL", "BG", "BGR", "CH", "CHE",
-  "CY", "CYP", "CZ", "CZE", "DE", "DEU", "DK", "DNK",
-  "EE", "EST", "EL", "GRC", "ES", "ESP", "FI", "FIN",
-  "FR", "FRA", "HR", "HRV", "HU", "HUN", "IE", "IRL",
-  "IS", "ISL", "IT", "ITA", "LT", "LTU", "LU", "LUX",
-  "LV", "LVA", "MT", "MLT", "NL", "NLD", "NO", "NOR",
-  "PL", "POL", "PT", "PRT", "RO", "ROU", "SE", "SWE",
-  "SI", "SVN", "SK", "SVK", "UK", "GBR" 
-)
 
-data <- data %>% 
-  left_join(iso_map, by = 'geo')
-```
 
 ```{r}
 input.processing.atributo.año <- reactive({
@@ -727,7 +712,8 @@ input.processing.atributo.año.join <- reactive({
   
   if (input$NUTS == "0") {
     tb <- geoj.tb %>% 
-   left_join(tb, by = "ISO_A3")
+      rename(geo = NUTS_ID) %>% 
+   left_join(tb, by = "geo")
     
     valor_formateado <- prettyNum(round(tb$values,digits=2), big.mark = ",", scientific = FALSE)
 
@@ -740,7 +726,7 @@ input.processing.atributo.año.join <- reactive({
                               paste0("<strong>", unidad, "</strong>"))
     
 etiquetas <-paste(
-   "<strong> ",tb$ADMIN , 
+   "<strong> ",tb$NUTS_NAME , 
    "</strong><br>",
    "<strong>Valor: </strong>", etiqueta_valor, etiqueta_unidad) %>%
  lapply(htmltools::HTML)
