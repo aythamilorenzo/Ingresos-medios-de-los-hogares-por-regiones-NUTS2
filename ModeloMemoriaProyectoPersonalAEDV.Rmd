@@ -875,12 +875,13 @@ data <- data %>%
   
 ```
 
-A continuación vamos a cargar un dataset de población que toma como población la media de cada año, esto es lo más correcto para normalizar datos económicos para los que no se tienen datos per cápita como sucede en nuestro caso para muchos indicadores. En cada caso que lo necesitemos, simplemente uniremos esta tabla a otra filtrada con los paises o provincias que queramos por la columna `geo` y `TIME_PERIOD` y normalizaremos los valores necesarios. Le cambiamos el nombre a la  columna `values` por `poblacion` para evitar confusiones.
+A continuación vamos a cargar un dataset de población que toma como población la media de cada año, esto es lo más correcto para normalizar datos económicos para los que no se tienen datos per cápita como sucede en nuestro caso para muchos indicadores. En cada caso que lo necesitemos, simplemente uniremos esta tabla a otra filtrada con los paises o provincias que queramos por la columna `geo` y `TIME_PERIOD` y normalizaremos los valores necesarios. Le cambiamos el nombre a la  columna `values` por `poblacion` para evitar confusiones. Eliminamos las columnas de `freq` y `unit` ya que solo tienen un valor y no nos sirven de nada.
 ```{r}
 poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>% 
   as_tibble() %>% 
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
-  rename(poblacion = values)
+  rename(poblacion = values) %>% 
+  select(-freq, -unit)
 ```
 
 
@@ -1210,7 +1211,7 @@ data.spain.box.plot <- data.spain.box %>%
 ggplotly(data.spain.box.plot)
 ```
 
-Por último para tener una visión general, veamos unos mapas coropléticos con los valores sobre la renta neta en el último año de las observaciones (2022). Haremos mapas tanto a nivel de NUTS 0 como NUTS 2, para ello cargamos la información necesaria.
+Por último para tener una visión general, veamos unos mapas coropléticos con los valores sobre varios indicadores económicos en el último año de las observaciones (2022). Haremos mapas tanto a nivel de NUTS 0 como NUTS 2, para ello cargamos la información necesaria.
 
 ```{r}
 geoj <- geojson_read("https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2024_4326_LEVL_0.geojson",  what = "sp")
@@ -1239,7 +1240,7 @@ mapa.NUTS0.renta.join <- geoj.tb %>%
 
 etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
                    "</strong><br><strong>Valor: </strong>", 
-                   mapa.NUTS0.renta.join$values, "<strong>PPS/HAB</strong>") %>% 
+                   round(mapa.NUTS0.renta.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
 
 leyenda <- "Renta neta<br>disponible"
@@ -1257,11 +1258,87 @@ mapa.NUTS2.renta.join <- geoj2.tb %>%
 
 etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
                    "</strong><br><strong>Valor: </strong>", 
-                   mapa.NUTS2.renta.join$values, "<strong>PPS/HAB</strong>") %>% 
+                   round(mapa.NUTS2.renta.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
 
 leyenda <- "Renta neta<br>disponible"
-MapaCoroplético2(geoj2, mapa.NUTS2.renta.join$values, etiquetas, leyenda)
+MapaCoroplético(geoj2, mapa.NUTS2.renta.join$values, etiquetas, leyenda)
+```
+
+
+```{r}
+mapa.NUTS0.ahorro <- data %>% 
+  filter(NUTS == 0, na_item == "B5N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
+
+mapa.NUTS0.ahorro.join <- geoj.tb %>% 
+  left_join(mapa.NUTS0.ahorro, by = "geo")
+
+etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
+                   "</strong><br><strong>Valor: </strong>", 
+                   round(mapa.NUTS0.ahorro.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
+  lapply(htmltools::HTML)
+
+leyenda <- "Ingreso<br>primario<br>neto"
+MapaCoroplético(geoj, mapa.NUTS0.ahorro.join$values, etiquetas, leyenda)
+```
+
+Veamos un mapa por NUTS 2 sobre el ingreso primario neto (antes de impuestos) en 2022
+
+```{r}
+mapa.NUTS2.ahorro <- data %>% 
+  filter(NUTS == 2, na_item == "B5N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
+
+mapa.NUTS2.ahorro.join <- geoj2.tb %>% 
+  left_join(mapa.NUTS2.ahorro, by = "geo")
+
+etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
+                   "</strong><br><strong>Valor: </strong>", 
+                   round(mapa.NUTS2.ahorro.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
+  lapply(htmltools::HTML)
+
+leyenda <- "Ingreso<br>primario<br>neto"
+MapaCoroplético(geoj2, mapa.NUTS2.ahorro.join$values, etiquetas, leyenda)
+```
+
+
+```{r}
+mapa.NUTS0.inversionactivos <- data %>% 
+  filter(NUTS == 0, na_item == "P51C", unit == "MIO_EUR", TIME_PERIOD == max(TIME_PERIOD)) %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+  select(-values) %>% 
+  rename(values = per.capita)
+
+mapa.NUTS0.inversionactivos.join <- geoj.tb %>% 
+  left_join(mapa.NUTS0.inversionactivos, by = "geo")
+
+etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
+                   "</strong><br><strong>Valor: </strong>", 
+                   round(mapa.NUTS0.inversionactivos.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
+  lapply(htmltools::HTML)
+
+leyenda <- "Inversión en<br>activos fijos"
+MapaCoroplético(geoj, mapa.NUTS0.inversionactivos.join$values, etiquetas, leyenda)
+```
+
+```{r}
+mapa.NUTS2.inversionactivos <- data %>% 
+  filter(NUTS == 2, na_item == "P51C", unit == "MIO_EUR", TIME_PERIOD == max(TIME_PERIOD)) %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+  select(-values) %>% 
+  rename(values = per.capita)
+
+mapa.NUTS2.inversionactivos.join <- geoj2.tb %>% 
+  left_join(mapa.NUTS2.inversionactivos, by = "geo")
+
+etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
+                   "</strong><br><strong>Valor: </strong>", 
+                   round(mapa.NUTS2.inversionactivos.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
+  lapply(htmltools::HTML)
+
+leyenda <- "Inversión en<br>activos fijos"
+MapaCoroplético(geoj2, mapa.NUTS2.inversionactivos.join$values, etiquetas, leyenda)
 ```
 
 
@@ -1331,8 +1408,7 @@ A continuación vamos a ver como han evolucionado los impuestos per cápita en E
 ```{r}
 datatsimp.spain <- data %>%
   filter(na_item == 'D5' & geo == 'ES' & unit == 'MIO_EUR' & TIME_PERIOD > 2001) %>%
-  left_join(poblacion %>% 
-              select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>%
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
   mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
   select(-values) %>%
   rename(values = per.capita) %>%
@@ -1452,8 +1528,7 @@ Otro factor interesante puede ser, los ingresos que los españoles reciben a par
 ```{r}
 datatsactivos.spain <- data %>% 
   filter(na_item == 'D4', geo == 'ES', TIME_PERIOD > 2001, direct == 'RECV', unit == "MIO_EUR") %>% 
-  left_join(poblacion %>% 
-              select(-freq, -unit), by = c("TIME_PERIOD", "geo")) %>% 
+  left_join(poblacion, by = c("TIME_PERIOD", "geo")) %>% 
   mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
   select(-values) %>% 
   rename(Año = TIME_PERIOD,
