@@ -1165,45 +1165,6 @@ ggplotly(data.spain.disp.plot, tooltip = "text")
 ```
 
 
-```{r}
-
-
-paises_comparar <- c(
-  "ES", "PT", "FR",      # Vecinos
-  "IT", "EL",             # Europa del Sur
-  "SE", "DK", "FI",       # Europa del Norte / altos ingresos
-  "PL", "HU", "RO"        # Europa del Este / PPS más bajo
-)
-
-data.spain.NUTS0.disp <- data %>% 
-  filter(geo %in% c(paises_comparar) & na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB') %>% 
-  select(full_name, unit, TIME_PERIOD, values) %>% 
-  pivot_wider(names_from = unit, values_from = values) %>% 
-  arrange(desc(PPS_EU27_2020_HAB)) 
-  
-  
-
-data.spain.NUTS0.disp.plot <- data.spain.NUTS0.disp %>% 
-  ggplot(aes(x = TIME_PERIOD, 
-             y = PPS_EU27_2020_HAB, 
-             group = full_name, 
-             color = full_name,
-             text = paste("Año: ", TIME_PERIOD,
-                          "<br>Región: ", full_name,
-                          "<br>Valores: ", PPS_EU27_2020_HAB, "PPS"))) +
-  geom_line(size = 1) +
-  geom_point(size = 2) +
-  labs(
-    title = "Evolución del PPS per cápita (renta neta) en países de la UE",
-    x = "Año",
-    y = "PPS per cápita",
-    color = "País"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "right")
-
-ggplotly(data.spain.NUTS0.disp.plot, tooltip = "text")
-```
 
 El gráfico muestra la distribución de los distintos tipos de ingreso por habitante en las regiones españolas. Se observa que el ingreso primario (B5N) es el más alto y disperso, mientras que el ingreso disponible (B6N) se reduce tras impuestos y transferencias, evidenciando el efecto redistributivo. El ahorro (B7N) presenta mayor variabilidad, reflejando diferencias regionales en la capacidad de ahorro. Los outliers pueden corresponder a regiones con niveles excepcionalmente altos, probablemente Madrid o Cataluña, donde el PIB y las rentas tienden a ser más elevadas.
 
@@ -1252,8 +1213,10 @@ ggplotly(data.spain.box.plot)
 Por último para tener una visión general, veamos unos mapas coropléticos con los valores sobre la renta neta en el último año de las observaciones (2022). Haremos mapas tanto a nivel de NUTS 0 como NUTS 2, para ello cargamos la información necesaria.
 
 ```{r}
-geoj <- geojson_read("https://ctim.es/AEDV/data/geo_countries.geojson",  what = "sp")
-geoj.tb <- geoj %>% as_tibble()
+geoj <- geojson_read("https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2024_4326_LEVL_0.geojson",  what = "sp")
+geoj.tb <- geoj %>% 
+  as_tibble() %>% 
+  rename(geo = NUTS_ID)
 ```
 
 
@@ -1272,9 +1235,9 @@ mapa.NUTS0.renta <- data %>%
   filter(NUTS == 0, na_item == "B6N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
 
 mapa.NUTS0.renta.join <- geoj.tb %>% 
-  left_join(mapa.NUTS0.renta, by = c("ADMIN" = "full_name"))
+  left_join(mapa.NUTS0.renta, by = "geo")
 
-etiquetas <- paste( "<strong>", geoj.tb$ADMIN,
+etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
                    "</strong><br><strong>Valor: </strong>", 
                    mapa.NUTS0.renta.join$values, "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
