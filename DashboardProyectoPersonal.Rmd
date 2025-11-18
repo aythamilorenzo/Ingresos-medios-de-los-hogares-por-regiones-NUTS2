@@ -205,7 +205,10 @@ NUTS <- read_csv('http://ctim.es/AEDV/data/eurostac_real_nuts.csv')%>%
 
 data <- data %>%
   left_join(NUTS, by = 'geo') %>%
-  relocate(full_name, freq, unit, direct, na_item, geo, TIME_PERIOD, values, .after = data$NUTS)
+  relocate(full_name, freq, unit, direct, na_item, geo, TIME_PERIOD, values, .after = data$NUTS) %>% 
+  mutate(full_name = ifelse(geo == "EU27_2020", "Media UE", full_name)) 
+
+
 
 
 ```
@@ -215,7 +218,8 @@ data <- data %>%
 poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>% 
   as_tibble() %>% 
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
-  rename(poblacion = values)
+  rename(poblacion = values) %>% 
+  select(-freq, -unit)
 
 ```
 
@@ -225,16 +229,18 @@ Series Temporales
 =======================================================================
 
 
-Column {.tabset}
+Column {.sidebar data-width=290}
 --------------------------------------------------
 
-### Países 1
 
 
 ```{r}
 output$Indicador.paises.dinamico.ui <- shiny::renderUI({
   
-  if(input$Unidad.paises == "PPS_EU27_2020_HAB") {
+  req(input$Alcance)
+  
+  if(input$Alcance == "Países") {
+  if(input$Unidad.series == "PPS_EU27_2020_HAB") {
     opciones <- c("Ingreso primario neto" = "B5N",
       "Renta disponible neta" = "B6N")
   } else {
@@ -245,667 +251,8 @@ output$Indicador.paises.dinamico.ui <- shiny::renderUI({
       "Impuestos sobre renta y patrimonio" = "D5",
       "Rentas de la propiedad" = "D4")
   }
-  
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    tags$label("Indicador:", style = "margin: 0"),
-    shiny::selectInput(
-      "Indicador.paises",
-      label = NULL,
-      choices = opciones,
-      selected = "B6N",
-      width = '240px' 
-    )
-  )
-})
-```
-
-```{r}
-tags$div(
-  style = "display: flex; flex-wrap: wrap; gap: 20px;", 
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    shiny::uiOutput("Indicador.paises.dinamico.ui") 
-  ),
-
-  # 2. Input de Unidad (Al lado)
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    tags$label("Unidad:", style = "margin: 0"),
-    shiny::selectInput(
-      "Unidad.paises",
-      label = NULL,
-      choices = c(
-        "€ por habitante" = "EUR_HAB",
-        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
-      selected = "EUR_HAB",
-      width = '240px' 
-    )
-  )
-)
-```
-
-
-```{r}
-input.processing.series.temporales <- reactive({
-  
-  if (input$Unidad.paises == 'EUR_HAB') {
-    unidad = "€"
   } else {
-    unidad = 'PPS'
-  }
-  
-  if(input$Indicador.paises %in% c('B5N', 'B6N')) {
-    
-    top_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises,
-      unit == 'PPS_EU27_2020_HAB',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo1_geo <- top_paises_geo[1:7]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo1_geo)
-
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises,
-      unit == 'PPS_EU27_2020_HAB',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-    )
-  
-      text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-  
-  
-  } else if(input$Indicador.paises %in% c('D62', 'D4')){
-    
-    top_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises,
-      unit == 'MIO_EUR',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo1_geo <- top_paises_geo[1:7]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo1_geo)
-  
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises,
-      unit == 'MIO_EUR',
-      direct == 'RECV',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    left_join(poblacion %>%
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-      per.capita = (values * 1000000) / (poblacion * 1000)
-    ) %>% 
-    select(-values) %>% 
-    rename(values = per.capita)
-  
-      text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-    
-  } else {
-    
-    top_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises,
-      unit == 'MIO_EUR',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo1_geo <- top_paises_geo[1:7]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo1_geo)
-  
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises,
-      unit == 'MIO_EUR',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    left_join(poblacion %>%
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-      per.capita = (values * 1000000) / (poblacion * 1000)
-    ) %>% 
-    select(-values) %>% 
-    rename(values = per.capita)
-  
-      text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-  
-  }
-  
-  return (list(tb,text))
-})
-```
-
-```{r}
-renderPlotly({
-  
-  tb <- input.processing.series.temporales()[[1]]
-  text <- input.processing.series.temporales()[[2]]
-  
-  p <- tb %>%
-    ggplot(aes(x = TIME_PERIOD,
-               y = values, 
-               color = grupo_color,
-               group = full_name,
-               text = text)) +
-    geom_line(linewidth = 0.8) + 
-    scale_color_manual(values = c(
-      "España y Canarias" = "red",
-      "Otros Países" = "#0072B2"
-    )) +
-    facet_wrap(~ full_name,
-               labeller = labeller(full_name = label_wrap_gen(width = 15))) +
-    theme_minimal() + 
-    labs(x = "Año", y = "") + 
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-    theme(panel.spacing.x = unit(1, "lines")) +
-    theme(legend.position = "none") +
-    theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15))
-    
-  ggplotly(p, tooltip = "text")
-})
-
-```
-
-### Países 2
-
-
-```{r}
-output$Indicador.paises.dinamico.ui2 <- shiny::renderUI({
-  
-  if(input$Unidad.paises2 == "PPS_EU27_2020_HAB") {
-    opciones <- c("Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N")
-  } else {
-    opciones <- c("Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N",
-      "Remuneración de los asalariados" = "D1",
-      "Prestaciones sociales recibidas" = "D62",
-      "Impuestos sobre renta y patrimonio" = "D5",
-      "Rentas de la propiedad" = "D4")
-  }
-  
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    tags$label("Indicador:", style = "margin: 0"),
-    shiny::selectInput(
-      "Indicador.paises2",
-      label = NULL,
-      choices = opciones,
-      selected = "B6N",
-      width = '240px' 
-    )
-  )
-})
-```
-
-```{r}
-tags$div(
-  style = "display: flex; flex-wrap: wrap; gap: 20px;", 
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    shiny::uiOutput("Indicador.paises.dinamico.ui2") 
-  ),
-
-  # 2. Input de Unidad (Al lado)
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    tags$label("Unidad:", style = "margin: 0"),
-    shiny::selectInput(
-      "Unidad.paises2",
-      label = NULL,
-      choices = c(
-        "€ por habitante" = "EUR_HAB",
-        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
-      selected = "EUR_HAB",
-      width = '240px' 
-    )
-  )
-)
-```
-
-```{r}
-input.processing.series.temporales2 <- reactive({
-  
-  if (input$Unidad.paises2 == 'EUR_HAB') {
-    unidad = "€"
-  } else {
-    unidad = 'PPS'
-  }
-  
-  if(input$Indicador.paises2 %in% c('B5N', 'B6N')) {
-    
-    mid_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises2,
-      unit == 'PPS_EU27_2020_HAB',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo2_geo <- mid_paises_geo[8:14]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo2_geo)
-
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises2,
-      unit == 'PPS_EU27_2020_HAB',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-    )
-  
-    text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-  
-  } else if(input$Indicador.paises2 %in% c('D62', 'D4')) {
-    
-    mid_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises2,
-      unit == 'MIO_EUR',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo2_geo <- mid_paises_geo[8:14]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo2_geo)
-  
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises2,
-      unit == 'MIO_EUR',
-      direct == 'RECV',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    left_join(poblacion %>%
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-      per.capita = (values * 1000000) / (poblacion * 1000)
-    ) %>% 
-    select(-values) %>% 
-    rename(values = per.capita)
-  
-  text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-    
-  }
-    
-   else {
-    
-    mid_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises2,
-      unit == 'MIO_EUR',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo2_geo <- mid_paises_geo[8:14]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo2_geo)
-  
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises2,
-      unit == 'MIO_EUR',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    left_join(poblacion %>%
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-      per.capita = (values * 1000000) / (poblacion * 1000)
-    ) %>% 
-    select(-values) %>% 
-    rename(values = per.capita)
-  
-    text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-    
-  }
-  
-  return(list(tb,text))
-})
-
-```
-
-```{r}
-renderPlotly({
-  
-  tb <- input.processing.series.temporales2()[[1]]
-  text <- input.processing.series.temporales2()[[2]]
-  
-  p <- tb %>%
-    ggplot(aes(x = TIME_PERIOD, 
-               y = values, 
-               color = grupo_color,
-               group = full_name,
-               text = text)) +
-
-    geom_line(linewidth = 0.8) + 
-    scale_color_manual(values = c(
-      "España y Canarias" = "red",
-      "Otros Países" = "#0072B2"
-    )) +
-    facet_wrap(~ full_name,
-               labeller = labeller(full_name = label_wrap_gen(width = 15))) +
-    theme_minimal() + 
-    labs(x = "Año", y = "") + 
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-    theme(panel.spacing.x = unit(1, "lines")) +
-    theme(legend.position = "none") +
-    theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15))
-    
-  ggplotly(p, tooltip = "text")
-  
-})
-```
-
-### Países 3
-
-```{r}
-output$Indicador.paises.dinamico.ui3 <- shiny::renderUI({
-  
-  if(input$Unidad.paises3 == "PPS_EU27_2020_HAB") {
-    opciones <- c("Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N")
-  } else {
-    opciones <- c("Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N",
-      "Remuneración de los asalariados" = "D1",
-      "Prestaciones sociales recibidas" = "D62",
-      "Impuestos sobre renta y patrimonio" = "D5",
-      "Rentas de la propiedad" = "D4")
-  }
-  
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    tags$label("Indicador:", style = "margin: 0"),
-    shiny::selectInput(
-      "Indicador.paises3",
-      label = NULL,
-      choices = opciones,
-      selected = "B6N",
-      width = '240px' 
-    )
-  )
-})
-```
-
-```{r}
-tags$div(
-  style = "display: flex; flex-wrap: wrap; gap: 20px;", 
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    shiny::uiOutput("Indicador.paises.dinamico.ui3") 
-  ),
-
-  tags$div(
-    style = "display: flex; align-items: center; gap: 10px;",
-    tags$label("Unidad:", style = "margin: 0"),
-    shiny::selectInput(
-      "Unidad.paises3",
-      label = NULL,
-      choices = c(
-        "€ por habitante" = "EUR_HAB",
-        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
-      selected = "EUR_HAB",
-      width = '240px' 
-    )
-  )
-)
-```
-
-```{r}
-input.processing.series.temporales3 <- reactive({
-  
-  if (input$Unidad.paises3 == 'EUR_HAB') {
-    unidad = "€"
-  } else {
-    unidad = 'PPS'
-  }
-  
-  if(input$Indicador.paises3 %in% c('B5N', 'B6N')) {
-    
-    low_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises3,
-      unit == 'PPS_EU27_2020_HAB',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo3_geo <- low_paises_geo[15:21]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo3_geo)
-
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises3,
-      unit == 'PPS_EU27_2020_HAB',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-    )
-  
-  text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-  
-  
-  } else if(input$Indicador.paises3 %in% c('D62', 'D4')) {
-    
-    low_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises3,
-      unit == 'MIO_EUR',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo3_geo <- low_paises_geo[15:21]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo3_geo)
-  
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises3,
-      unit == 'MIO_EUR',
-      direct == 'RECV',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    left_join(poblacion %>%
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-      per.capita = (values * 1000000) / (poblacion * 1000)
-    ) %>% 
-    select(-values) %>% 
-    rename(values = per.capita)
-  
-  text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-
-  
-  } else {
-    
-    low_paises_geo <- data %>%
-    filter(
-      na_item == input$Indicador.paises3,
-      unit == 'MIO_EUR',
-      NUTS == 0,   
-      !(geo %in% c("ES","NO"))  
-    ) %>%
-    group_by(geo) %>%
-    summarise(
-      media_valor = mean(values, na.rm = TRUE)
-    ) %>%
-    ungroup() %>%
-    arrange(desc(media_valor)) %>% # 
-    pull(geo) 
-  
-  paises_grupo3_geo <- low_paises_geo[15:21]
-  
-  paises_para_filtrar <- c("ES", "ES70", paises_grupo3_geo)
-  
-  tb <- data %>%
-    filter(
-      na_item == input$Indicador.paises3,
-      unit == 'MIO_EUR',
-      geo %in% paises_para_filtrar 
-    ) %>%
-    left_join(poblacion %>%
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-    mutate(
-      grupo_color = ifelse(geo %in% c("ES", "ES70"), "España y Canarias", "Otros Países"),
-      full_name = forcats::fct_relevel(full_name, "Spain", "Canarias"),
-      per.capita = (values * 1000000) / (poblacion * 1000)
-    ) %>% 
-    select(-values) %>% 
-    rename(values = per.capita)
-  
-    text = paste("Año: ",tb$TIME_PERIOD,
-                        "<br>Valor: ",round(tb$values,1),unidad)
-    
-  }
-  
-  return(list(tb,text))
-})
-
-
-```
-
-
-```{r}
-renderPlotly({
-  
-  tb <- input.processing.series.temporales3()[[1]]
-  text <- input.processing.series.temporales3()[[2]]
-  
-  p <- tb %>%
-    ggplot(aes(x = TIME_PERIOD,
-               y = values,
-               color = grupo_color,
-               group = full_name,
-               text = text)) +
-    geom_line(linewidth = 0.8) + 
-    scale_color_manual(values = c(
-      "España y Canarias" = "red",
-      "Otros Países" = "#0072B2"
-    )) +
-    facet_wrap(~ full_name,
-               labeller = labeller(full_name = label_wrap_gen(width = 15))) +
-    theme_minimal() + 
-    labs(x = "Año", y = "") + 
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-    theme(panel.spacing.x = unit(1, "lines")) +
-    theme(legend.position = "none") +
-    theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15))
-    
-  ggplotly(p, tooltip = "text")
-})
-```
-
-
-
-### Comunidades España
-
-```{r}
-div(
-  style = "display: flex; align-items: center; gap: 10px;",
-  tags$label("Indicador:", style = "margin: 0"),
-shiny::selectInput(
-  "Indicador",
-  label = NULL,
-  choices = c(
-    "Ingreso primario neto" = "B5N",
+      opciones <- c("Ingreso primario neto" = "B5N",
     "Renta disponible neta" = "B6N",
     "Ahorro neto" = 'B7N',
     "Remuneración de los asalariados" = "D1",
@@ -913,80 +260,270 @@ shiny::selectInput(
     "Impuestos sobre renta y patrimonio" = "D5",
     "Rentas de la propiedad" = "D4",
     "Gasto en consumo final" = "P3",
-    "Inversión en activos fijos" = "P51C"
-  ),
-  selected = "B6N"
-))
+    "Inversión en activos fijos" = "P51C")
+}
+    shiny::selectInput(
+      "Indicador.series",
+      label = "Indicador",
+      choices = opciones,
+      selected = "B6N",
+      width = '240px' 
+    )
+  
+})
 ```
 
 ```{r}
-input.processing.series.temporales.Comunidades <- reactive({
+    shiny::selectInput(
+      "Alcance",
+      label = "Alcance",
+      choices = c(
+        "Países",
+        "Comunidades España"
+      ),
+      selected = "Países"
+    )
+    
+    shiny::uiOutput("Indicador.paises.dinamico.ui")
+    
+
+  conditionalPanel(
+    condition = "input.Alcance == 'Países'",
+    shiny::selectInput(
+      "Unidad.series",
+      label = "Unidad",
+      choices = c(
+        "€ por habitante" = "EUR_HAB",
+        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
+      selected = "EUR_HAB",
+      width = '240px' 
+    )
+  )
   
-  if(input$Indicador %in% c('B5N', 'B6N', 'B7N')) {
-    
-    tb <- data %>%
-    filter(na_item == input$Indicador & unit == "EUR_HAB" & substr(geo,1,2) == "ES" & NUTS == 2)
-    
-  } else if(input$Indicador %in% c('D62', 'D4')) {
+    opciones.series.paises  <- data %>% 
+      filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020')) %>% 
+      mutate(
+    full_name = ifelse(geo == "EU27_2020", "Media UE", full_name)) %>%
+  arrange(full_name)
       
-    tb <- data %>% 
-      filter(na_item == input$Indicador & unit == "MIO_EUR" & direct == 'RECV' &
-               substr(geo,1,2) == 'ES' & NUTS == 2) %>% 
-      left_join(poblacion %>% 
-                  select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-      select(-values) %>% 
-      rename(values = per.capita)
-    
-  } else {
-    tb <- data %>% 
-      filter(na_item == input$Indicador & unit == "MIO_EUR" &
-               substr(geo,1,2) == 'ES' & NUTS == 2) %>% 
-      left_join(poblacion %>% 
-                  select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
-      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-      select(-values) %>% 
-      rename(values = per.capita)  
-    
-    }
+  conditionalPanel(
+    condition = "input.Alcance == 'Países'", 
+    shiny::selectInput(
+      "Paises.series",
+      label = "Países",
+      choices = unique(opciones.series.paises$full_name),
+      selected = c("Canarias", "Spain", "Media UE", "France", "Portugal", "Germany"),
+      multiple = TRUE
+    )
+  )
   
-    return(tb)
+    opciones.series.comunidades  <- data %>% 
+      filter(((NUTS == 2 & substr(geo,1,2) == 'ES') | geo == 'EU27_2020')) %>% 
+            mutate(
+    full_name = ifelse(geo == "EU27_2020", "Media UE", full_name)) %>%
+  arrange(full_name)
+    
+  conditionalPanel(
+    condition = "input.Alcance == 'Comunidades España'",
+    shiny::selectInput(
+      "Comunidades.series",
+      label = "Comunidades",
+      choices = unique(opciones.series.comunidades$full_name),
+      selected = c("Canarias", "Andalucía", "Comunidad de Madrid", "Extremadura", "Media UE", "País Vasco"),
+      multiple = TRUE
+    )
+  )
+  
+  shiny::checkboxInput(
+    "Escala.series",
+    label = "Escala del eje y libre",
+    value = FALSE
+  )
+```
+
+
+```{r}
+input.processing.series.temporales <- reactive({
+  
+  if(input$Alcance == "Países") {
+  if (input$Unidad.series == 'EUR_HAB') {
+    unidad = "€/HAB"
+  } else {
+    unidad = "PPS/HAB"
+  }
+  } else {
+    unidad = "€/HAB"
+  }  
+
+  if(input$Alcance == "Países") {
+    if(input$Indicador.series %in%  c("B5N", "B6N")) {
+      
+      tb <- data %>% 
+        filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020'), na_item == input$Indicador.series, unit == input$Unidad.series & full_name %in% input$Paises.series) %>% 
+        rename(Región = full_name,
+               valores = values) %>% 
+        mutate(
+    grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
+    Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE") 
+  )
+      
+      text = paste("Año: ", tb$TIME_PERIOD,
+                   "<br>valores: ", round(tb$valores,1), unidad)
+      
+    } else if(input$Indicador.series %in% c("D4", "D62")) {
+      tb <- data %>% 
+        filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020'), na_item == input$Indicador.series, unit == "MIO_EUR" &  full_name %in% input$Paises.series, direct == "RECV") %>% 
+        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(Región = full_name,
+               valores = per.capita) %>% 
+        mutate(
+    grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
+    Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE") 
+  )
+      
+          text = paste("Año: ", tb$TIME_PERIOD,
+                   "<br>valores: ", round(tb$valores,1), unidad)
+      
+    } else {
+      
+      tb <- data %>% 
+        filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020'), na_item == input$Indicador.series, unit == "MIO_EUR" & full_name %in% input$Paises.series) %>% 
+        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(Región = full_name,
+               valores = per.capita) %>% 
+        mutate(
+    grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
+    Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE") 
+  )
+      
+          text = paste("Año: ", tb$TIME_PERIOD,
+                   "<br>valores: ", round(tb$valores,1), unidad)
+      
+    }
+  } else if(input$Indicador.series %in%  c("B5N", "B6N", "B7N")) {
+      
+      tb <- data %>% 
+        filter((NUTS == 2 | geo == 'EU27_2020'), na_item == input$Indicador.series, unit == "EUR_HAB" & full_name %in% input$Comunidades.series) %>% 
+        rename(Región = full_name,
+               valores = values) %>% 
+        mutate(
+    grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
+    Región = forcats::fct_relevel(Región, "Canarias", "Media UE") 
+  )
+      
+      
+            text = paste("Año: ", tb$TIME_PERIOD,
+                   "<br>valores: ", round(tb$valores,1), unidad)
+      
+  } else if(input$Indicador.series %in% c("D4", "D62")) {
+      tb <- data %>% 
+        filter((NUTS == 2 | geo == 'EU27_2020'), na_item == input$Indicador.series, unit == "MIO_EUR" & direct == "RECV" & full_name %in% input$Comunidades.series) %>% 
+        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(Región = full_name,
+               valores = per.capita) %>% 
+        mutate(
+    grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
+    Región = forcats::fct_relevel(Región, "Canarias", "Media UE") 
+  )
+      
+      
+            text = paste("Año: ", tb$TIME_PERIOD,
+                   "<br>valores: ", round(tb$valores,1), unidad)
+      
+  } else {
+    
+          tb <- data %>% 
+        filter((NUTS == 2 | geo == 'EU27_2020'), na_item == input$Indicador.series & full_name %in% input$Comunidades.series) %>% 
+        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% 
+        rename(Región = full_name,
+               valores = per.capita) %>% 
+              mutate(
+    grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
+    Región = forcats::fct_relevel(Región, "Canarias", "Media UE") 
+  )
+          
+                text = paste("Año: ", tb$TIME_PERIOD,
+                   "<br>valores: ", round(tb$valores,1), unidad)
+    
+  }
+  
+  return(list(tb, text))
 
 })
 ```
 
+
+```{r}
+renderTable({
+  
+  tb <- input.processing.series.temporales()[[1]]
+  
+  tb %>% 
+    filter((NUTS == 0 | NUTS == 2)) %>% 
+    arrange(desc(TIME_PERIOD)) %>% 
+    rename(Año = TIME_PERIOD) %>% 
+    mutate(Año = as.character(Año),
+           valores=prettyNum(round(valores,
+digits=max(5-nchar(as.character(round(max(na.omit(valores))))),0)),big.mark = ",")) %>% 
+    select(Región, Año, valores)
+  
+  
+    
+  
+})
+```
+
+Column
+-------------------------------
+
+###
 
 ```{r}
 renderPlotly({
   
-  tb <- input.processing.series.temporales.Comunidades()
+  tb <- input.processing.series.temporales()[[1]]
+  text <- input.processing.series.temporales()[[2]]
   
-  tb.plot <- tb %>% 
-    mutate(grupo_color = ifelse(geo == "ES70", "Canarias", "Otras Regiones"),
-      full_name = forcats::fct_relevel(full_name, "Canarias"))
+  if(input$Escala.series == TRUE) {
+    escala = "free_y"
+  } else {
+    
+    escala = "fixed"
+  }
   
-  p <- tb.plot %>% 
-ggplot(aes(x = TIME_PERIOD,
-           y = values,
-           color = grupo_color,
-           group = full_name,
-           text = paste("Año: ",TIME_PERIOD,
-                        "<br>Valor: ",round(values,1),"€"))) +
-  geom_line(linewidth = 0.8) +
-  scale_color_manual(values = c("Canarias" = "red", "Otras Regiones" = "#0072B2")) +
-  facet_wrap(~ full_name,
-             labeller = labeller(full_name = label_wrap_gen(width = 15))) +
-  theme_minimal() +
-  labs(x = "Año", y = "€ por habitante") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(panel.spacing.x = unit(1, "lines")) +
-  theme(panel.spacing.y = unit(1, "lines")) +
-  theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15)) +
-    theme(legend.position = 'none')
-  
+  p <- tb %>%
+    ggplot(aes(x = TIME_PERIOD,
+               y = valores, 
+               color = grupo_color,
+               group = Región,
+               text = text)) +
+    geom_line(linewidth = 0.8) + 
+    scale_color_manual(values = c(
+      "Destacado" = "red",
+      "Otras Regiones" = "#0072B2"
+    )) +
+    facet_wrap(~ Región,
+               labeller = labeller(full_name = label_wrap_gen(width = 15)), scales = escala) +
+    theme_minimal() + 
+    labs(x = "Año", y = "") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    theme(panel.spacing.x = unit(1, "lines")) +
+    theme(legend.position = "none") +
+    theme(plot.margin = margin(t = 5, r = 5, b = 80, l = 15))
+    
   ggplotly(p, tooltip = "text")
 })
+
 ```
+
 
 Atributos por año 
 ================================================
@@ -1117,8 +654,7 @@ input.processing.atributo.año <- reactive({
            & unit == "MIO_EUR" & NUTS == input$NUTS & direct == 'RECV') 
       
       tb <- tb %>% 
-        left_join(poblacion %>% 
-                    select(-freq, -unit), by = c('TIME_PERIOD', 'geo')) %>% 
+        left_join(poblacion, by = c('TIME_PERIOD', 'geo')) %>% 
         mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
         select(-values) %>% 
         rename(values = per.capita)
@@ -1131,8 +667,7 @@ input.processing.atributo.año <- reactive({
            & unit == "MIO_EUR" & NUTS == input$NUTS) 
       
       tb <- tb %>% 
-        left_join(poblacion %>% 
-                    select(-freq, -unit), by = c('TIME_PERIOD', 'geo')) %>% 
+        left_join(poblacion, by = c('TIME_PERIOD', 'geo')) %>% 
         mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
         select(-values) %>% 
         rename(values = per.capita)
@@ -1405,8 +940,7 @@ input.processing.arima <- reactive({
     
         tb <- data %>% 
     filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0 & direct == 'RECV') %>%
-    left_join(poblacion %>% 
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
+    left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
           mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
           select(-values) %>% 
     rename(Región = full_name,
@@ -1419,8 +953,7 @@ input.processing.arima <- reactive({
     
             tb <- data %>% 
     filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0) %>%
-    left_join(poblacion %>% 
-                select(-freq, -unit), by = c('geo', 'TIME_PERIOD')) %>% 
+    left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
           mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
           select(-values) %>% 
     rename(Región = full_name,
@@ -1442,8 +975,7 @@ input.processing.arima <- reactive({
       
       tb <- data %>% 
         filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'MIO_EUR' & direct == 'RECV') %>%
-        left_join(poblacion %>% 
-                    select(-freq, -unit), by = c("TIME_PERIOD", "geo")) %>% 
+        left_join(poblacion, by = c("TIME_PERIOD", "geo")) %>% 
         mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
         select(-values) %>% 
         rename(Región = full_name,
@@ -1455,8 +987,7 @@ input.processing.arima <- reactive({
       
       tb <- data %>% 
         filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'MIO_EUR') %>%
-        left_join(poblacion %>% 
-                    select(-freq, -unit), by = c("TIME_PERIOD", "geo")) %>% 
+        left_join(poblacion, by = c("TIME_PERIOD", "geo")) %>% 
         mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
         select(-values) %>% 
         rename(Región = full_name,
@@ -1660,7 +1191,7 @@ mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_dispon
 
   tb <- data %>% 
     filter(TIME_PERIOD == input$Año.analisis & NUTS == input$NUTS.analisis & unit == "MIO_EUR", direct == input$Direct.analisis) %>% 
-    left_join(poblacion %>% select(-freq, -unit), by = c("geo", "TIME_PERIOD")) %>% 
+    left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
     mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
     select(-values) %>% 
     rename(values = per.capita) %>% 
@@ -1688,8 +1219,7 @@ mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_dispon
   
   tb <- data %>% 
     filter(TIME_PERIOD == input$Año.analisis & NUTS == input$NUTS.analisis & unit == "MIO_EUR", direct == input$Direct.analisis) %>% 
-    left_join(poblacion %>% 
-                select(-freq, -unit), by = c("geo", "TIME_PERIOD")) %>% 
+    left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
     mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
     select(-values) %>% 
     rename(values = per.capita) %>% 
