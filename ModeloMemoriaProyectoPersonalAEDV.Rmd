@@ -1719,6 +1719,24 @@ ggplotly(p, tooltip = "")
  
 ```
 
+```{r,cache=FALSE}
+p <- SeguimientoActividadesProyecto%>%
+  mutate(week=yearweek(as.Date(START))) %>% 
+  group_by(week)%>%
+   summarise(
+     HORAS=round(sum(MINUTES)/60,digits = 1)
+   )%>%
+  ggplot(aes(week,HORAS)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label=HORAS),size=3,colour = "blue",nudge_y = 0.2)+ 
+  theme(axis.text.x = element_text(angle = 45,hjust=1))+
+  labs(x="",y="HORAS TRABAJADAS",title = "TOTAL HORAS TRABAJADAS POR SEMANA")
+
+ggplotly(p)
+  
+ 
+```
+
 
 
 
