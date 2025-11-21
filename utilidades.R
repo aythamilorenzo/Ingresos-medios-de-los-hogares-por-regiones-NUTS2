@@ -5,7 +5,8 @@ MapaCoroplético<- function(geoj,value,region_labels,legend_title){
   pal <- colorQuantile("YlOrRd", value, n = 9)
   p <-  geoj %>%
     leaflet() %>%  
-    setView(lng = 10.7038, lat = 44, zoom = 4) %>% 
+    setView(lng = 20, lat = 50, zoom = 4)  %>% 
+    addProviderTiles(provider = "Esri.WorldImagery") %>% 
     addPolygons(
       fillColor = ~pal(value), 
       weight = 2,
@@ -114,4 +115,48 @@ plot_correlation <- function(
       xaxis = list(title = "", tickangle = 45),
       yaxis = list(title = "", autorange = "reversed")
     )
+}
+
+
+
+# CÁLCULO DE LA TRANSFORMACIÓN DE YEO–JOHNSON A PARTIR DE UN VECTOR Y UN VALOR DE lambda 
+yeo.johnson <- function(y, lambda) {
+  y_t <- numeric(length(y))
+  
+  # Para y >= 0
+  pos_idx <- which(y >= 0)
+  if (lambda == 0) {
+    y_t[pos_idx] <- log(y[pos_idx] + 1)
+  } else {
+    y_t[pos_idx] <- ((y[pos_idx] + 1)^lambda - 1) / lambda
+  }
+  
+  # Para y < 0
+  neg_idx <- which(y < 0)
+  if (lambda == 2) {
+    y_t[neg_idx] <- -log(-y[neg_idx] + 1)
+  } else {
+    y_t[neg_idx] <- -(((-y[neg_idx] + 1)^(2 - lambda) - 1) / (2 - lambda))
+  }
+  
+  return(y_t)
+}
+
+
+# ESTIMACIÓN DE lambda PARA LA TRANSFORMACIÓN DE YEO–JOHNSON DE UN VECTOR y
+# OPTIMIZANDO  EL R2 DE LA REGRESIÓN LINEAL CON UN VECTOR x.  
+optimize.yeojohnson.R2 <- function(x, y, lambda_range = c(-1, 1.9)) {
+  
+  # Función objetivo: R² negativo (porque optimize minimiza)
+  r2_neg <- function(lambda) {
+    y_t <- yeo.johnson(y, lambda)
+    modelo <- lm(y_t ~ x)
+    return(-summary(modelo)$r.squared)  # queremos maximizar R²
+  }
+  
+  # Optimización de lambda
+  opt <- optimize(r2_neg, interval = lambda_range)
+  
+  # Se retorna el valor óptimo de lambda 
+  return(opt$minimum)
 }
