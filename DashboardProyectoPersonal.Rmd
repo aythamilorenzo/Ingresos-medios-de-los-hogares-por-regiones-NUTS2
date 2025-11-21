@@ -901,6 +901,316 @@ leaflet::renderLeaflet({
 
 ```
 
+Comparación Atributos
+==================================================
+
+Column {.sidebar data-width=250}
+--------------------------------------------------
+
+
+```{r inicio_comparacion}
+
+
+shiny::selectInput(
+  "Alcance.comparacion",
+  label = "Alcance",
+  choices = c("Países", "Comunidades España"),
+  selected = "Países"
+)
+
+
+shiny::uiOutput("Indicadores.comparacion.ui.x")
+
+selectInput(
+  "x_scale", 
+  label = "Transformación del atributo x",
+  choices = c("none",
+              "sqrt",    
+              "log"
+             ), 
+  selected = "none"
+)
+
+shiny::uiOutput("Indicadores.comparacion.ui.y")
+
+
+selectInput(
+  "y_scale", 
+  label = "Transformación del atributo y",
+  choices = c("none",
+              "log",
+              "YeoJohnson"
+             ), 
+  selected = "none"
+)
+output$Indicadores.comparacion.ui.x <- shiny::renderUI({
+  
+  req(input$Alcance.comparacion)
+  
+  if (input$Alcance.comparacion == "Países") {
+    
+    opciones <- c(
+      "Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N",
+      "Remuneración de los asalariados" = "D1",
+      "Prestaciones sociales recibidas" = "D62",
+      "Impuestos sobre renta y patrimonio" = "D5",
+      "Rentas de la propiedad" = "D4"
+    )
+  } else {
+
+    opciones <- c(
+      "Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N",
+    "Ahorro neto" = 'B7N',
+    "Remuneración de los asalariados" = "D1",
+    "Prestaciones sociales recibidas" = "D62",
+    "Impuestos sobre renta y patrimonio" = "D5",
+    "Rentas de la propiedad" = "D4",
+    "Gasto en consumo final" = "P3",
+    "Inversión en activos fijos" = "P51C"
+    )
+  }
+  
+   
+      shiny::selectInput(
+        "X", 
+        label = "x: Atributo 1",
+        choices = opciones,
+        selected = "B6N"
+      )
+    
+  
+})
+
+
+output$Indicadores.comparacion.ui.y <- shiny::renderUI({
+  
+  req(input$Alcance.comparacion)
+  
+  if (input$Alcance.comparacion == "Países") {
+    
+    opciones <- c(
+      "Ingreso primario neto" = "B5N",
+      "Renta disponible neta" = "B6N",
+      "Remuneración de los asalariados" = "D1",
+      "Prestaciones sociales recibidas" = "D62",
+      "Impuestos sobre renta y patrimonio" = "D5",
+      "Rentas de la propiedad" = "D4"
+    )
+  } else {
+
+    opciones <- c(
+      "Ingreso primario neto" = "B5N",
+    "Renta disponible neta" = "B6N",
+    "Ahorro neto" = 'B7N',
+    "Remuneración de los asalariados" = "D1",
+    "Prestaciones sociales recibidas" = "D62",
+    "Impuestos sobre renta y patrimonio" = "D5",
+    "Rentas de la propiedad" = "D4",
+    "Gasto en consumo final" = "P3",
+    "Inversión en activos fijos" = "P51C"
+    )
+  }
+  
+   
+      shiny::selectInput(
+        "Y", 
+        label = "y: Atributo 2",
+        choices = opciones,
+        selected = "B5N"
+      )
+    
+  
+})
+
+
+shiny::selectInput(
+  "Año.comparacion",
+  label = "Año",
+  choices = c("Todos",sort(unique(data$TIME_PERIOD), decreasing = TRUE)),
+  selected = "Todos"
+)
+
+lista_paises <- data %>% 
+  filter(NUTS == 0) 
+   
+
+
+conditionalPanel(
+  condition = "input['Alcance.comparacion'] == 'Países'",
+    shiny::selectInput(
+  "Pais.comparacion",
+  label = "País",
+  choices = unique(lista_paises$full_name),
+  selected = "Spain"
+  )
+)
+
+lista_comunidades <- data %>% 
+  filter(NUTS == 2 & substr(geo,1,2) == 'ES') 
+
+conditionalPanel(
+  condition = "input['Alcance.comparacion'] == 'Comunidades España'",
+  
+  shiny::selectInput(
+    "Comunidad.comparacion",
+    label = "Región",
+    choices = unique(lista_comunidades$full_name),
+    selected = "Canarias"
+  )
+)
+
+```
+
+
+```{r}
+input.processing.comparacion <- reactive({
+  
+  
+  data %>% 
+    filter(NUTS == 0, full_name == 'Spain', na_item  %in% c("B6N","D4"), unit == "MIO_EUR", (!na_item %in% c("D4", "D62") | direct == "RECV")) %>% 
+    left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+      select(-values) %>% 
+      rename(values = per.capita) %>% 
+      select(-direct) %>% 
+    pivot_wider(names_from = na_item, values_from = values) %>% 
+    select(Región = full_name, Año = TIME_PERIOD, x = B6N, y = D4) %>% 
+      na.omit()
+      
+  
+  
+  if(input$Alcance.comparacion == "Países") {
+    
+    tb <- data %>% 
+      filter(NUTS == 0, full_name == input$Pais.comparacion, na_item %in% c(input$X, input$Y), unit == "MIO_EUR", (!na_item %in% c("D4", "D62") | direct == "RECV")) %>%
+      left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+      select(-values) %>% 
+      rename(values = per.capita) %>% 
+      select(-direct) %>% 
+      pivot_wider(names_from = na_item, values_from = values) %>% 
+      select(Región = full_name, Año = TIME_PERIOD, x = input$X, y = input$Y) %>% 
+      na.omit()
+    
+  } else {
+    
+    tb <- data %>% 
+      filter(NUTS == 2, full_name == input$Comunidad.comparacion, na_item %in% c(input$X, input$Y), unit == 'MIO_EUR', (!na_item %in% c("D4", "D62") | direct == "RECV")) %>%
+      left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+      select(-values) %>% 
+      rename(values = per.capita) %>% 
+      select(-direct) %>% 
+      pivot_wider(names_from = na_item, values_from = values) %>% 
+      select(Región = full_name, Año = TIME_PERIOD, x = input$X, y = input$Y) %>% 
+      na.omit()
+    
+  }
+  
+    if(input$Año.comparacion != 'Todos'){
+    tb <- tb %>%
+      filter(Año == input$Año.comparacion)
+    } 
+  
+  
+    # transformados los indicadores de acuerdo con los parámetros de la transformación
+  if(input$x_scale=="sqrt") tb$x <- sign(tb$x)*sqrt(abs(tb$x))
+  if(input$x_scale=="log") tb$x <-  sign(tb$x)*log(abs(tb$x))
+  if(input$y_scale=="log") tb$y <-  sign(tb$y)*log(abs(tb$y))
+  lambda <- 1  
+  if(input$y_scale=="YeoJohnson"){
+    lambda <- optimize.yeojohnson.R2(tb$x, tb$y) # Cálculo óptimo modelo Yeo-Jonhson 
+    tb$y <- yeo.johnson(tb$y,lambda)
+  }
+  
+  tb <- tb %>% 
+    na.omit()
+  # Cálculo regresión lineal después de transformar las variables. 
+  fit <- lm(y ~ x,data=tb)
+  
+  # devolvemos una lista con todo lo calculado 
+  return(list(tb,fit,lambda))
+  
+})
+```
+
+```{r}
+# imprimimos en formato HTML los resultados del análisis de regresión 
+# de los indicadores seleccionados transformados
+shiny::renderUI({
+  
+  # capturamos el resultado del procesado de los inputs 
+  tb <- input.processing.comparacion()[[1]]
+  fit <- input.processing.comparacion()[[2]]
+  lambda <- input.processing.comparacion()[[3]]
+  
+  # imprimimos el resultado en formato HTML 
+  text <- paste(
+    "<strong>LINEAR REGRESSION ANALYSIS</strong> <br>",
+    "<strong>formula:   y=ax+b </strong><br>",
+    "<strong>x: Atributo 1 scaled </strong><br>",
+    "<strong>y: Atributo 2 scaled </strong><br>",
+    "<strong><br>RESULTS</strong><br>",
+    "<strong>correlation:</strong>",round(cor(tb$x,tb$y),digits = 8),
+    "<br><strong>slope (a):</strong>",formatC(fit$coefficients[2], format = "e", digits = 3),
+    "<br><strong>independent (b):</strong>",formatC(fit$coefficients[1], format = "e", digits = 3)
+  )
+  if(input$y_scale=="YeoJohnson"){
+    text <- paste(text,"<br><strong> lambda (YeoJohnson) :</strong>",formatC(lambda, format = "e", digits = 3))
+  } 
+  text <- paste(text,
+     "<br><strong>sd(residuos):</strong>",formatC(summary(fit)$sigma, format = "e", digits = 3),
+     "<br><strong>R2:</strong>",round(summary(fit)$r.squared, digits = 8)           
+  )
+      
+  HTML(text)
+})
+```
+
+Column
+-------------------------------------------
+
+### 
+```{r}
+renderPlotly({
+  
+  tb <- input.processing.comparacion()[[1]] 
+  
+  
+    tb %>%
+    ggplot(aes(x,
+               y)) + 
+    geom_point() +
+    theme(legend.position = "none") +
+    labs(x= input$x, y= input$y) +
+    geom_smooth(method = lm, se = FALSE) + 
+      labs(x = "€/HAB",
+           y = "€/HAB")
+})
+```
+
+Column {data-width=240}
+--------------------------------------------------
+
+```{r}
+renderTable({
+  
+  # capturamos el resultado del procesado de los inputs 
+  tb <- input.processing.comparacion()[[1]]
+  
+  # imprimimos la tabla 
+  tb %>% 
+  arrange(desc(x)) %>% 
+  mutate(Año = input$Año.comparacion) %>% 
+  mutate(x=prettyNum(round(x,digits=2), big.mark = ",")) %>% 
+  mutate(y=prettyNum(round(y,digits=2), big.mark = ","))
+  
+})
+```
+
+
 ARIMA 
 ==================================================
 
@@ -1242,7 +1552,7 @@ tags$div(
     shiny::selectInput(
       "Año.analisis",
       label = NULL,
-      choices = unique(data$TIME_PERIOD),
+      choices = rev(unique(data$TIME_PERIOD)),
       selected = last(data$TIME_PERIOD),
       width = '140px' 
     )
