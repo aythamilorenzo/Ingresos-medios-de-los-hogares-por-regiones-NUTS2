@@ -106,7 +106,6 @@ body {
 ```{r global, include=FALSE}
 # carga de librerías
 library(pxR)
-library(kableExtra)
 library(patchwork)
 library(MASS)
 library(flexdashboard)
@@ -120,8 +119,6 @@ library(geojsonio)
 library(plotly)
 library(ggplot2)
 library(tidyverse)
-library(knitr)    # Quitar
-library(eurostat) # Quitar
 source("utilidades.R")
 
 # asociamos funciones a determinadas librerías para evitar posibles errores 
@@ -189,15 +186,10 @@ data <- data %>%
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>%
   filter(TIME_PERIOD > 1999 & TIME_PERIOD < 2023)
 
-nuts_names <- get_eurostat_dic("geo") %>% # Diccionario de códigos a nombres
-  as_tibble()
-
-data <- data %>%
-  left_join(nuts_names, by = c("geo" = "code_name"))
 
 NUTS <- read_csv('http://ctim.es/AEDV/data/eurostac_real_nuts.csv')%>%
-  as_tibble() %>%
-  select(-full_name) 
+  as_tibble() 
+  
 
 data <- data %>%
   left_join(NUTS, by = 'geo') %>%
@@ -211,11 +203,13 @@ data <- data %>%
 
 
 ```{r message=FALSE, warning=FALSE, results= 'hide'}
-poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>% 
+poblacion <- read.csv("poblacion.csv") %>% 
   as_tibble() %>% 
-  mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>% 
+  mutate(TIME_PERIOD = as.numeric(format(as.Date(TIME_PERIOD), "%Y"))) %>% 
   rename(poblacion = values) %>% 
   select(-freq, -unit)
+
+
 
 ```
 
@@ -342,7 +336,7 @@ output$Indicador.paises.dinamico.ui <- shiny::renderUI({
     condition = "input.Alcance == 'Países' && input['Indicador.series'] == 'Todos los indicadores'", 
     shiny::selectInput(
       "Paises.series2",
-      label = "Países (máx. 1)",
+      label = "País",
       choices = unique((data %>% filter(NUTS == 0))$full_name),
       selected = "Spain"
     )
@@ -352,7 +346,7 @@ output$Indicador.paises.dinamico.ui <- shiny::renderUI({
     condition = "input.Alcance == 'Comunidades España' && input['Indicador.series'] == 'Todos los indicadores'", 
     shiny::selectInput(
       "Comunidades.series2",
-      label = "Comunidades (máx. 1)",
+      label = "Comunidad",
       choices = unique((data %>% filter(NUTS == 2, substr(geo,1,2) == 'ES'))$full_name),
       selected = "Canarias"
     )
