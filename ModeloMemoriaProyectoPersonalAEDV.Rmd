@@ -44,6 +44,7 @@ library(leaflet)
 library(geojsonio)
 library(plotly)
 library(ggplot2)
+library(gganimate)
 library(tidyverse)
 library(eurostat)
 library(knitr)
@@ -277,7 +278,9 @@ knitr::opts_chunk$set(
 # Introducción
 
 
-<!-- situar el tema en un contexto amplio, destacando su relevancia en la actualidad. Delimitar el problema que se aborda en ese contexto amplio --> 
+En el marco socioeconómico de la Unión Europea, la cohesión territorial y la reducción de las desigualdades siguen siendo desafíos primordiales. Si bien los indicadores macroeconómicos nacionales suelen acaparar la atención mediática, la renta disponible de los hogares se erige como el indicador más fiel para medir el bienestar real de la ciudadanía, su capacidad de consumo y su nivel de ahorro. En la coyuntura actual, marcada por la recuperación post-pandemia y las tensiones inflacionarias, analizar la evolución de la riqueza familiar no es solo un ejercicio estadístico, sino una herramienta fundamental para evaluar la salud económica real de las familias y la efectividad de las políticas de convergencia europeas.
+
+El problema central que aborda este proyecto radica en que los promedios nacionales a menudo enmascaran profundas disparidades internas. Un análisis limitado al nivel de país (NUTS 0) es insuficiente para comprender la realidad de territorios con dinámicas propias. Por tanto, este estudio desciende al nivel NUTS 2 para visibilizar estas brechas, delimitando el análisis a la evolución comparada de las regiones europeas durante las últimas dos décadas (2000-2022). Específicamente, se pone el foco en la posición relativa de las Comunidades Autónomas españolas, y de manera singular en Canarias como región ultraperiférica, para determinar si existe una convergencia real en términos de renta neta y poder adquisitivo (PPS) frente a los estándares europeos o si, por el contrario, la brecha regional tiende a perpetuars
 
 
 ##  Estado actual
@@ -286,7 +289,7 @@ knitr::opts_chunk$set(
 
 ## Motivación
 
-<!-- Descripción de la motivación que te ha llevado a elegir este tema de trabajo que puede incluir intereses personales/sociales/profesionales --> 
+Una de las principales motivaciones que me ha llevado a elegir un dataset de este tema es mi deseo de vivir fuera de España, sobretodo por temas laborales entre otros y por calidad de vida. Yo considero que los aspectos económicos son un factor muy importante a tener en cuenta para esto, el poder comparar a España con otros países o incluso poder comparar España internamente por indicadores económicos diferentes es algo que me ha impulsado a elegir este dataset.
 
 ## Objetivos
 
@@ -837,8 +840,7 @@ str(data)
 
 ## Preparación de los datos
 
-<!-- desarrollo de esta fase -->
-
+Empezamos cargando nuestro dataset, pasamos la variable `TIME_PERIOD` a tipo 'date' y ordenamos por dicha variable y por `geo`.
 ```{r}
 # dataset.name <- "nama_10r_2hhinc"
 # data <- get_eurostat(dataset.name, time_format = 'date') %>%
@@ -852,22 +854,14 @@ data <- read.csv("nama_10r_2hhinc.csv") %>%
 
 ```
 
-Para empezar, vamos a pasar 'TIME_PERIOD' a año y además vamos a filtrar para que solo aparezcan los años desde el 2000 hasta el 2022, ya que son los años en los que hay más observaciones. Luego, como solo tenemos códigos de cada región y no sus nombres, vamos a unir esta tabla de eurostat que nos proporciona todos los nombres. Por último, vamos a añadir la información de NUTS para todas las regiones en una nueva columna.
-
+Ahora, vamos a convertir 'TIME_PERIOD' para que únicamente nos aparezca el año, quitando el día y el mes y además vamos a filtrar para que solo aparezcan los años desde el 2000 hasta el 2022, ya que son los años en los que hay más observaciones. Luego, como solo tenemos códigos de cada región y no sus nombres, vamos a añadirle una tabla que nos proporciona todos los nombres y su información de NUTS a partir de su código `geo`. 
 ```{r carga_dataset}
 data <- data %>%
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>%
   filter(TIME_PERIOD > 1999 & TIME_PERIOD < 2023)
 
-nuts_names <- get_eurostat_dic("geo") %>% # Diccionario de códigos a nombres
-  as_tibble()
-
-data <- data %>%
-  left_join(nuts_names, by = c("geo" = "code_name"))
-
 NUTS <- read_csv('http://ctim.es/AEDV/data/eurostac_real_nuts.csv')%>%
-  as_tibble() %>%
-  select(-full_name) 
+  as_tibble() 
 
 data <- data %>%
   left_join(NUTS, by = 'geo') %>%
@@ -889,12 +883,13 @@ Al analizar la evolución de la renta en las regiones de España, vemos que en g
 
 ```{r, fig.asp = 1.1}
 data.es <- data %>%
-  filter(na_item == "B6N" & unit == "EUR_HAB" & substr(geo,1,2) == "ES" & NUTS == 2) %>% 
+  filter(na_item == "B6N" & unit == "EUR_HAB" & ((substr(geo,1,2) == "ES" & NUTS == 2) | geo == 'EU27_2020')) %>% 
+  mutate(full_name = ifelse(geo == "EU27_2020", "Media UE", full_name)) %>%
   rename(Año = TIME_PERIOD,
          valores = values) %>%
   mutate(
-    grupo_color = ifelse(full_name == "Canarias", "Canarias", "Otras Regiones"),
-    full_name = forcats::fct_relevel(full_name, "Canarias") 
+    grupo_color = ifelse(full_name %in% c("Canarias", "Media UE"), "Canarias", "Otras Regiones"),
+    full_name = forcats::fct_relevel(full_name, "Canarias", "Media UE") 
   )
 
 data.es.plot <- ggplot(data.es, aes(x = Año,
@@ -946,8 +941,7 @@ data.ahorro.es.plot <- data.ahorro.es %>%
     legend.position = 'none'
   ) +
   labs(
-    title = "Nivel de ahorro de los hogares por región",
-    subtitle = "España, 2022",
+    title = "Ahorro de los hogares por región Española (2022)",
     x = NULL,
     y = "Ahorro bruto (€ por habitante)"
   )
@@ -955,117 +949,84 @@ data.ahorro.es.plot <- data.ahorro.es %>%
 ggplotly(data.ahorro.es.plot, tooltip = "text")
 ```
 
+```{r}
+ParetoValue <- function(
+v, # vector numérico
+ParetoSignificancia # número en [0,1] con el grado de significancia de Pareto
+){
+  x <- sort(v,decreasing = TRUE)
+  return(x[which(cumsum(x)>=ParetoSignificancia*sum(x))[1]])
+}
+```
+
 
 Ahora vamos a ver un top 10 de los países con mejor renta neta por habitante medido en unidades PPS que nos permitirán hacer una comparación justa entre países.
 
 ```{r}
-data.top10PPS <- data %>%
+data.top.rentaPPS.pareto <- data %>%
   filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & NUTS == 0 & TIME_PERIOD == max(TIME_PERIOD)) %>%
-  arrange(desc(values)) %>%
-  head(n = 10)
+  filter(values >= ParetoValue(values, 0.8)) %>% 
+  arrange(desc(values))
+  
+  
 
-data.canarias.españa.renta.PPS <- data %>% 
-  filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & full_name %in% c('Spain', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & NUTS != 1)
+data.canarias.mediaue.renta.PPS <- data %>% 
+  filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & ((full_name  == 'Canarias' & NUTS == 2) | geo == 'EU27_2020')) %>% 
+  mutate(full_name = ifelse(geo == 'EU27_2020', 'Media UE', full_name))
 
-data.top10PPS.plot <- rbind(data.top10PPS, data.canarias.españa.renta.PPS)
+
+data.top.renta.PPS <- data %>% 
+  filter(na_item == 'B6N', unit == 'PPS_EU27_2020_HAB', NUTS == 0, full_name %in% data.top.rentaPPS.pareto$full_name) 
+
+data.top10PPS.plot <- rbind(data.top.renta.PPS, data.canarias.mediaue.renta.PPS) %>% arrange(desc(values))
+
+
 
 data.top10PPS.plot <- data.top10PPS.plot %>% 
-  mutate(
-    grupo_color = case_when(
-      full_name == "Spain" ~ "España",
-      full_name == "Canarias" ~ "Canarias",
-      TRUE ~ "Otros"
-    )
-  ) %>%
-  ggplot(aes(x = reorder(full_name, values), 
+  ggplot(aes(x = full_name, 
              y = values,
-             fill = grupo_color, 
-             text = paste("Región: ", full_name,
-                          "<br>Valores: ", values, "€"))) +
-  geom_col(width = 0.7, show.legend = FALSE) + 
+             fill = full_name)) +
+  geom_bar(stat = 'identity') + 
+  labs(x = "", y = "Renta neta per cápita (PPS)") +
   coord_flip() +
-  scale_fill_manual(values = c(
-    "Canarias" = "red", 
-    "España" = "red", 
-    "Otros" = "#0072B2" 
-  )) +
-  theme_minimal(base_size = 13) +
-  labs(
-    title = "Top 10 países (EU) con mayor renta neta disponible",
-    subtitle = paste("Último año disponible: " , max(data.top10PPS$TIME_PERIOD), "(Valores tomados en PPS)"),
-    x = NULL,
-    y = "Unidades PPS por habitante"
-  ) +
-  theme(
-    axis.text.y = element_text(size = 11, face = "bold"),
-    axis.text.x = element_text(size = 10),
-    plot.title = element_text(size = 16, face = "bold"),
-    plot.subtitle = element_text(size = 12, color = "grey30"),
-    plot.caption = element_text(size = 9, color = "grey50"),
-    panel.grid.major.y = element_blank(), 
-    panel.grid.minor = element_blank(),
-    legend.position = 'none'
-  ) +
-  expand_limits(y = max(data.top10PPS$values) * 1.1) 
-
-ggplotly(data.top10PPS.plot, tooltip = "text")
+  theme_bw(base_size = 14) +
+  theme(legend.position = "none") +
+  labs(title = "Evolución de la renta neta per cápita | Año: {current_frame}") +
+  transition_manual(TIME_PERIOD)
+  
+animate(data.top10PPS.plot, fps = 2, end_pause = 10)
 ```
-
-Echemos un vistazo al top 10 con peor renta neta por habitante, como se esperaba, España es el país con mejor renta per cápita en este caso. Para el caso de Canarias (región NUTS 2), hay países con peor renta per cápita.
-
 
 ```{r}
-data.top10PPS <- data %>%
-  filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & NUTS == 0 & TIME_PERIOD == max(TIME_PERIOD)) %>%
-  arrange(desc(values)) %>%
-  tail(n = 10)
+data.imp.comunidades <- data %>%
+  filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 2 & TIME_PERIOD > 2015 & TIME_PERIOD < 2023 & substr(geo,1,2) == 'ES') %>%
+  select(geo, full_name, TIME_PERIOD, values) %>%
+  arrange(desc(values)) 
 
-data.canarias.españa.renta.PPS <- data %>% 
-  filter(na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB' & full_name %in% c('Spain', 'Canarias') & TIME_PERIOD == max(TIME_PERIOD) & NUTS != 1)
+data.imp.comunidades <- data.imp.comunidades %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+  mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
+  arrange(desc(imp.per.capita))
 
-data.top10PPS.plot <- rbind(data.top10PPS, data.canarias.españa.renta.PPS)
+data.imp.comunidades.plot <- data.imp.comunidades %>%
+  ggplot(aes(x = TIME_PERIOD,
+             y = full_name,
+             fill=imp.per.capita,
+             text = paste("Año: ", TIME_PERIOD,
+                          "<br>Región: ", full_name,
+                          "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
+  geom_tile(color = "grey80") +
+  scale_fill_gradient(low = "white", 
+                      high = "steelblue") +
+  labs(title="Impuestos sobre renta y patrimonio",
+       subtitle = "2016-2022",
+       x="Año",
+       y="País",
+       fill = "Impuestos per cápita")
 
-data.top10PPS.plot <- data.top10PPS.plot %>% 
-  mutate(
-    grupo_color = case_when(
-      full_name == "Spain" ~ "España",
-      full_name == "Canarias" ~ "Canarias",
-      TRUE ~ "Otros"
-    )
-  ) %>%
-  ggplot(aes(x = reorder(full_name, values), 
-             y = values,
-             fill = grupo_color, 
-             text = paste("Región: ", full_name,
-                          "<br>Valores: ", values, "€"))) +
-  geom_col(width = 0.7, show.legend = FALSE) + 
-  coord_flip() +
-  scale_fill_manual(values = c(
-    "Canarias" = "red", 
-    "España" = "red", 
-    "Otros" = "#0072B2" 
-  )) +
-  theme_minimal(base_size = 13) +
-  labs(
-    title = "Top 10 países (EU) con menor renta neta disponible",
-    subtitle = paste("Último año disponible: " , max(data.top10PPS$TIME_PERIOD), "(Valores tomados en PPS)"),
-    x = NULL,
-    y = "Unidades PPS por habitante"
-  ) +
-  theme(
-    axis.text.y = element_text(size = 11, face = "bold"),
-    axis.text.x = element_text(size = 10),
-    plot.title = element_text(size = 16, face = "bold"),
-    plot.subtitle = element_text(size = 12, color = "grey30"),
-    plot.caption = element_text(size = 9, color = "grey50"),
-    panel.grid.major.y = element_blank(), 
-    panel.grid.minor = element_blank(),
-    legend.position = 'none'
-  ) +
-  expand_limits(y = max(data.top10PPS$values) * 1.1) 
-
-ggplotly(data.top10PPS.plot, tooltip = "text")
+ggplotly(data.imp.comunidades.plot, tooltip = "text")
 ```
+
 
 Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, utilizaremos el dataset secundario de población que hemos añadido anteriormente y haremos las operaciones necesarias para normalizar estos valores transformándolos a per cápita. Hay que tener en cuenta que los valores de los impuestos están en millones de euros y los de la población en miles de personas.
 
@@ -1086,7 +1047,7 @@ data.imp.plot <- data.imp %>%
              fill=imp.per.capita,
              text = paste("Año: ", TIME_PERIOD,
                           "<br>Región: ", full_name,
-                          "<br>Valores: ", imp.per.capita))) +
+                          "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
   geom_tile(color = "grey80") +
   scale_fill_gradient(low = "white", 
                       high = "steelblue") +
@@ -1127,6 +1088,48 @@ data.spain.pie %>%
 
 ```
 
+Vamos a ver una gráfica por países que nos mostrará, el ingreso primario neto, la renta neta y la diferencia entre ambos, con esto podremos ver cuanto se descuenta en cada país del salario bruto.
+
+```{r}
+data.diff.paises <- data %>% 
+  filter(((NUTS == 0) | (full_name == 'Canarias' & NUTS == 2)) & na_item %in% c("B5N", "B6N", "D62"), unit == 'MIO_EUR', TIME_PERIOD == max(TIME_PERIOD),
+         (!na_item == "D62" | direct == "RECV"), !full_name %in% c('Slovakia',"Slovenia", "Czechia")) %>%
+  select(-direct) %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+  select(-values) %>% 
+  rename(values = per.capita) %>% 
+  pivot_wider(names_from = na_item, values_from = values) %>% 
+  mutate(Diferencia = B5N - (B6N - D62)) %>% 
+  rename(Región = full_name,
+         Año = TIME_PERIOD,
+         `Ingreso primario neto` = B5N,
+         `Renta neta` = B6N,
+         `Prestaciones sociales recibidas` = D62) %>% 
+  select(Región, Año, `Ingreso primario neto`, `Renta neta`,`Prestaciones sociales recibidas`, Diferencia)
+
+p <- data.diff.paises %>% 
+  rename(`Ingreso primario` = `Ingreso primario neto`,
+         Prest.soc.recib = `Prestaciones sociales recibidas`) %>% 
+  pivot_longer(`Ingreso primario`:`Diferencia`, names_to = 'Indicador', values_to = 'valores') %>% 
+  ggplot(aes(x = Indicador,
+             y = valores,
+             fill = Indicador,
+             text = paste("Región:", Región,
+                          "<br>",Indicador,":", round(valores,1), "€/HAB"))) +
+    geom_bar(stat = 'identity') + 
+    facet_wrap(~ Región) +
+    theme_bw(base_size = 14) +
+     theme(
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()
+    )
+  
+  ggplotly(p, tooltip = "text")
+```
+
+
 
 A continuación vamos a ver la relación entre las ganancias y los ahorros por habitante, veremos si más renta implica más ahorro por países. Como podemos ver existe una fuerte relación entre la renta y el ahorro, en general las comunidades con mayor renta disponible también presentan mayor capacidad de ahorro.
 
@@ -1139,10 +1142,10 @@ data.spain.disp <- data %>%
     na_item %in% c("B6N", "B7N") &
     substr(geo,1,2) == 'ES' &
     NUTS == 2 &
-    unit == "EUR_HAB" &
-      TIME_PERIOD == max(TIME_PERIOD)
+    unit == "EUR_HAB" 
   ) %>%
-  pivot_wider(names_from = na_item, values_from = values)
+  pivot_wider(names_from = na_item, values_from = values) %>% 
+  rename(Año = TIME_PERIOD)
 
 
 data.spain.disp.plot <- data.spain.disp %>% 
@@ -1152,16 +1155,17 @@ ggplot(aes(x = B6N,
            text = paste("Región: ", full_name,
                         "<br>Renta neta: ", B6N, "€",
                         "<br>Ahorro neto: ", B7N, "€"))) +
-  geom_point(color = "#0072B2", size = 3) +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  geom_point(colour = "steelblue", aes(size = 3, frame = Año)) +
   labs(
-    title = "Relación entre renta disponible y ahorro neto",
+    title = "Relación entre renta y ahorro por comunidades de España",
     x = "Renta disponible (€ por habitante)",
     y = "Ahorro neto (€ por habitante)"
   ) +
-  theme_minimal(base_size = 13)
+  theme_minimal(base_size = 13) + 
+  theme(legend.position = 'none')
 
-ggplotly(data.spain.disp.plot, tooltip = "text")
+ggplotly(data.spain.disp.plot, tooltip = "text") %>% 
+    animation_opts(frame = 200)
 
 ```
 
@@ -1186,8 +1190,12 @@ data.spain.box <- data %>%
 data.spain.box.plot <- data.spain.box %>% 
   ggplot(aes(x = nombre_indicador, 
              y = EUR_HAB,
-             fill = nombre_indicador)) +
+             fill = nombre_indicador,
+             text = paste("Indicador: ",nombre_indicador,
+                          "<br>Año: ",TIME_PERIOD,
+                          "<br>Región: ",full_name))) +
   geom_boxplot(alpha = 0.7, color = "black", outlier.color = "red") +
+     geom_jitter(shape=16, position=position_jitter(0.2))+
   scale_fill_manual(
     values = c(
       "Ingreso Primario Neto" = "#FDAE61", 
@@ -1208,7 +1216,7 @@ data.spain.box.plot <- data.spain.box %>%
     legend.position = "top"
   )
 
-ggplotly(data.spain.box.plot)
+ggplotly(data.spain.box.plot, tooltip = 'text')
 ```
 
 Por último para tener una visión general, veamos unos mapas coropléticos con los valores sobre varios indicadores económicos en el último año de las observaciones (2022). Haremos mapas tanto a nivel de NUTS 0 como NUTS 2, para ello cargamos la información necesaria.
@@ -1231,21 +1239,7 @@ geoj2.tb <- geoj2 %>%
 
 Empecemos por una visión general de la renta neta.
 
-```{r}
-mapa.NUTS0.renta <- data %>% 
-  filter(NUTS == 0, na_item == "B6N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
 
-mapa.NUTS0.renta.join <- geoj.tb %>% 
-  left_join(mapa.NUTS0.renta, by = "geo")
-
-etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
-                   "</strong><br><strong>Valor: </strong>", 
-                   round(mapa.NUTS0.renta.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
-  lapply(htmltools::HTML)
-
-leyenda <- "Renta neta<br>disponible"
-MapaCoroplético(geoj, mapa.NUTS0.renta.join$values, etiquetas, leyenda)
-```
 
 Veamos ahora la renta pero en este caso para regiones NUTS2.
 
@@ -1265,61 +1259,6 @@ leyenda <- "Renta neta<br>disponible"
 MapaCoroplético(geoj2, mapa.NUTS2.renta.join$values, etiquetas, leyenda)
 ```
 
-
-```{r}
-mapa.NUTS0.ahorro <- data %>% 
-  filter(NUTS == 0, na_item == "B5N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
-
-mapa.NUTS0.ahorro.join <- geoj.tb %>% 
-  left_join(mapa.NUTS0.ahorro, by = "geo")
-
-etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
-                   "</strong><br><strong>Valor: </strong>", 
-                   round(mapa.NUTS0.ahorro.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
-  lapply(htmltools::HTML)
-
-leyenda <- "Ingreso<br>primario<br>neto"
-MapaCoroplético(geoj, mapa.NUTS0.ahorro.join$values, etiquetas, leyenda)
-```
-
-Veamos un mapa por NUTS 2 sobre el ingreso primario neto (antes de impuestos) en 2022
-
-```{r}
-mapa.NUTS2.ahorro <- data %>% 
-  filter(NUTS == 2, na_item == "B5N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
-
-mapa.NUTS2.ahorro.join <- geoj2.tb %>% 
-  left_join(mapa.NUTS2.ahorro, by = "geo")
-
-etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
-                   "</strong><br><strong>Valor: </strong>", 
-                   round(mapa.NUTS2.ahorro.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
-  lapply(htmltools::HTML)
-
-leyenda <- "Ingreso<br>primario<br>neto"
-MapaCoroplético(geoj2, mapa.NUTS2.ahorro.join$values, etiquetas, leyenda)
-```
-
-
-```{r}
-mapa.NUTS0.inversionactivos <- data %>% 
-  filter(NUTS == 0, na_item == "P51C", unit == "MIO_EUR", TIME_PERIOD == max(TIME_PERIOD)) %>% 
-  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-  select(-values) %>% 
-  rename(values = per.capita)
-
-mapa.NUTS0.inversionactivos.join <- geoj.tb %>% 
-  left_join(mapa.NUTS0.inversionactivos, by = "geo")
-
-etiquetas <- paste( "<strong>", geoj.tb$NUTS_NAME,
-                   "</strong><br><strong>Valor: </strong>", 
-                   round(mapa.NUTS0.inversionactivos.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
-  lapply(htmltools::HTML)
-
-leyenda <- "Inversión en<br>activos fijos"
-MapaCoroplético(geoj, mapa.NUTS0.inversionactivos.join$values, etiquetas, leyenda)
-```
 
 ```{r}
 mapa.NUTS2.inversionactivos <- data %>% 
