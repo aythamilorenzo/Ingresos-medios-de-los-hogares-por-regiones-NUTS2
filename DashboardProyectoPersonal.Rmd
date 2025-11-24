@@ -1579,7 +1579,7 @@ indicadores.nuts.pca <- c("B5N", "B6N", "D1", "D62", "D5", "D4")
 
 ```{r}
 
-input.proccesing.tboriginal <- reactive({
+input.processing.tboriginal <- reactive({
   
 mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
 "D61" = "cotizaciones_sociales (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
@@ -1611,7 +1611,7 @@ mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_dispon
 
 shiny::renderTable({
   
-    tb.original <- input.proccesing.tboriginal()
+    tb.original <- input.processing.tboriginal()
     
     tb.original %>%
       mutate(across(-Región, ~ prettyNum(round(., 2), big.mark = ","))) 
@@ -1624,7 +1624,7 @@ shiny::renderTable({
 ```{r}
 renderPlotly({
   
-  tb.original <- input.proccesing.tboriginal()
+  tb.original <- input.processing.tboriginal()
   
  tb.original %>%
   select(-Región) %>% # eliminamos de la tabla las variables no-numéricas 
@@ -1635,7 +1635,7 @@ renderPlotly({
 
 
 ```{r}
-input.proccesing.tbpca <- reactive({
+input.processing.tbpca <- reactive({
   
   mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
 "D61" = "cotizaciones_sociales (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
@@ -1667,7 +1667,7 @@ input.proccesing.tbpca <- reactive({
 ```{r}
 shiny::renderTable({
   
-  tb.pca <- input.proccesing.tbpca()
+  tb.pca <- input.processing.tbpca()
     
     tb.pca %>% 
   column_to_rownames(var="Región") %>%
@@ -1685,13 +1685,15 @@ shiny::renderTable({
 ```{r}
 input.processing.modelopca <- reactive({
   
-  tb.pca <- input.proccesing.tbpca()
+  tb.pca <- input.processing.tbpca()
   
+
   tb <- tb.pca %>% 
   column_to_rownames(var="Región") 
 
   pca <- prcomp(tb,scale = TRUE)
   
+  return(pca)
 })
 ```
 
@@ -1700,7 +1702,7 @@ renderTable({
   
   pca <- input.processing.modelopca()
 
-  tb.pca <- input.proccesing.tbpca()
+  tb.pca <- input.processing.tbpca()
   
   pca$x %>% as_tibble()  %>% 
   mutate(Región=tb.pca$Región) %>%
@@ -1751,69 +1753,62 @@ shiny::renderTable({
 ### Visualización PCA
 
 ```{r}
-shiny::uiOutput("controles_ejes_pca")
+tags$style(HTML("
+  #PCx, #PCy {
+    height: 30px !important;
+    min-height: 30px !important;
+    font-size: 12px !important;
+    padding-top: 5px !important;    
+    padding-bottom: 5px !important;
+    line-height: 1.5 !important;
+    padding-left: 10px !important;
+    padding-right: 5px !important
+  }
 
-output$controles_ejes_pca <- shiny::renderUI({
-  
+  #PCx_div, #PCy_div, .shiny-input-container {
+     margin-bottom: 0px !important;
+  }
+ 
+  #contenedor_grafico_absoluto {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+"))
 
-  req(input.processing.modelopca())
-  
-  pca <- input.processing.modelopca()
-  num_componentes <- length(pca$sdev)
-  
 
+tags$div(
+  style = "height: 50px; display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin-bottom: 10px;",
+ 
   tags$div(
-    style = "display:flex; gap:20px; align-items:center; flex-wrap:wrap;",
-    
-    # Input Eje X
-    tags$div(
-      style="display:flex; align-items:center; gap:6px; min-width:200px;",
-      tags$label("Componente eje x", style="margin-bottom:0; white-space:nowrap;"),
-      shiny::numericInput(
-        "PCx",
-        label = NULL,
-        value = 1,
-        min = 1,
-        max = length(pca$sdev), # <--- ¡AQUÍ ESTÁ LA MAGIA!
-        step = 1,
-        width = "80px"
-      )
-    ),
-    
-    # Input Eje Y
-    tags$div(
-      style="display:flex; align-items:center; gap:6px; min-width:200px;",
-      tags$label("Componente eje y", style="margin-bottom:0; white-space:nowrap;"),
-      shiny::numericInput(
-        "PCy",
-        label = NULL,
-        value = 2,
-        min = 1,
-        max = length(pca$sdev), # <--- ¡AQUÍ TAMBIÉN!
-        step = 1,
-        width = "80px"
-      )
+    style ="display:flex; align-items:center; gap:6px; min-width:150px;",
+    tags$label("Eje X:", style = "margin-bottom:0; white-space:nowrap; font-weight:bold;"),
+    numericInput(
+      "PCx", label = NULL, value = 1, min = 1, max = 8, step = 1, width = "50px"
+    )
+  ),
+ 
+  tags$div(
+    style = "display:flex; align-items:center; gap:6px; min-width:150px;",
+    tags$label("Eje Y:", style = "margin-bottom:0; white-space:nowrap; font-weight:bold;"),
+    shiny::numericInput(
+      "PCy", label = NULL, value = 2, min = 1, max = 8, step = 1, width = "50px"
     )
   )
+)
+
+
+
+tags$div(
+  id = "contenedor_grafico_absoluto",
+  highcharter::highchartOutput("grafico_pca_out", height = "100%")
+)
+
+
+output$grafico_pca_out <- highcharter::renderHighchart({
+  hchart(input.processing.modelopca(), choices = c(input$PCx, input$PCy))
 })
 ```
-
-
-###
-
-```{r}
-highcharter::renderHighchart({
-  
-  pca <- input.processing.modelopca()
-  
-  req(input$PCx)
-  req(input$PCy)
-  
-   hchart(pca,choices=c(input$PCx,input$PCy)) %>%
-  hc_tooltip(
-    useHTML = TRUE,
-    headerFormat = "{point.key}<br>"
-  )
-})
-```
-
