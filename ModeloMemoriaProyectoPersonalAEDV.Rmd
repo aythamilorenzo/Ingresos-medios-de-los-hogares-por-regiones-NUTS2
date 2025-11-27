@@ -4,10 +4,6 @@ author: "Aythami Lorenzo Padilla"
 date: "`r Sys.Date()`"
 output:
   html_document:
-    number_sections: true
-    toc: true
-    toc_depth: 3
-    toc_float: true
   pdf_document: default
 ---
 
@@ -280,7 +276,7 @@ knitr::opts_chunk$set(
 
 En el marco socioeconómico de la Unión Europea, la cohesión territorial y la reducción de las desigualdades siguen siendo desafíos primordiales. Si bien los indicadores macroeconómicos nacionales suelen acaparar la atención mediática, la renta disponible de los hogares se erige como el indicador más fiel para medir el bienestar real de la ciudadanía, su capacidad de consumo y su nivel de ahorro. En la coyuntura actual, marcada por la recuperación post-pandemia y las tensiones inflacionarias, analizar la evolución de la riqueza familiar no es solo un ejercicio estadístico, sino una herramienta fundamental para evaluar la salud económica real de las familias y la efectividad de las políticas de convergencia europeas.
 
-El problema central que aborda este proyecto radica en que los promedios nacionales a menudo enmascaran profundas disparidades internas. Un análisis limitado al nivel de país (NUTS 0) es insuficiente para comprender la realidad de territorios con dinámicas propias. Por tanto, este estudio desciende al nivel NUTS 2 para visibilizar estas brechas, delimitando el análisis a la evolución comparada de las regiones europeas durante las últimas dos décadas (2000-2022). Específicamente, se pone el foco en la posición relativa de las Comunidades Autónomas españolas, y de manera singular en Canarias como región ultraperiférica, para determinar si existe una convergencia real en términos de renta neta y poder adquisitivo (PPS) frente a los estándares europeos o si, por el contrario, la brecha regional tiende a perpetuars
+El problema central que aborda este proyecto radica en que los promedios nacionales a menudo enmascaran profundas disparidades internas. Un análisis limitado al nivel de país (NUTS 0) es insuficiente para comprender la realidad de territorios con dinámicas propias. Por tanto, este estudio desciende al nivel NUTS 2 para visibilizar estas brechas, delimitando el análisis a la evolución comparada de las regiones europeas durante las últimas dos décadas (2000-2022). Específicamente, se pone el foco en la posición relativa de las Comunidades Autónomas españolas, y de manera singular en Canarias como región ultraperiférica, para determinar si existe una convergencia real en términos de renta neta y poder adquisitivo (PPS) frente a los estándares europeos o si, por el contrario, la brecha regional tiende a perpetuarse.
 
 
 ##  Estado actual
@@ -289,7 +285,7 @@ El problema central que aborda este proyecto radica en que los promedios naciona
 
 ## Motivación
 
-Una de las principales motivaciones que me ha llevado a elegir un dataset de este tema es mi deseo de vivir fuera de España, sobretodo por temas laborales entre otros y por calidad de vida. Yo considero que los aspectos económicos son un factor muy importante a tener en cuenta para esto, el poder comparar a España con otros países o incluso poder comparar España internamente por indicadores económicos diferentes es algo que me ha impulsado a elegir este dataset.
+Una de las principales motivaciones que me ha llevado a elegir un dataset de este tema es una aspiración que tengo de vivir o estudiar fuera de España, sobretodo por temas laborales entre otros y por calidad de vida. Yo considero que los aspectos económicos son un factor muy importante a tener en cuenta para esto, el poder comparar a España con otros países o incluso poder comparar España internamente para ver como es económicamente en distintos factores es algo que me ha impulsado a elegir este tema de trabajo. Además, las cuestiones económicas siempre me han llamado más la atención que cualquier otra.
 
 ## Objetivos
 
@@ -877,9 +873,13 @@ poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>%
   rename(poblacion = values) %>% 
   select(-freq, -unit)
 ```
+<br>
+<br>
+Para este apartado y el siguiente, procederemos a hacer un breve análisis que va desde dentro de España hacia afuera, terminando con una visión general sobre algunos datos.
 
+Para empezar, comenzamos viendo la evolución de uno de los indicadores económicos más importante a nivel de bienestar de la población por comunidades de España, la renta neta en euros per cápita.
+<br>
 
-Al analizar la evolución de la renta en las regiones de España, vemos que en general la tendencia es hacia arriba, exceptuando 2005-2010 y 2020, esto probablemente, por sucesos como la explosión de la burbuja inmobiliaria en 2008 y en el caso de 2020 por el covid. Todas siguen un patrón parecido, quitando eso, vemos que Madrid, Navarra y País Vasco son las comunidades con mejor renta neta por persona.
 
 ```{r, fig.asp = 1.1}
 data.es <- data %>%
@@ -914,25 +914,38 @@ data.es.plot <- ggplot(data.es, aes(x = Año,
 ggplotly(data.es.plot, tooltip = "text")
 ```
 
-Como vemos, en primer lugar se encuentra País Vasco, Canarias se encuentra bastante abajo.
+<br>
+<br>
+
+Al analizar la evolución de la renta en las regiones de España, vemos que en general la tendencia es hacia arriba, exceptuando 2005-2010 y 2020, esto probablemente, por sucesos como la explosión de la burbuja inmobiliaria en 2008 y en el caso de 2020 por el covid. Todas siguen un patrón parecido, quitando eso, vemos que Madrid, Navarra y País Vasco son las comunidades con mejor renta neta por persona. 
+
+Tras un primer vistazo sobre la renta neta en cada país, echemos un vistazo ahora a la capacidad de ahorro neto en euros per cápita por comunidades de España, y veamos si hay alguna similitud ya que la renta neta y la capacidad de ahorro deberían estar relacionadas. En este caso en lugar de ver una evolución, tenemos datos del último año que nos ofrece este dataset, 2022.
+
+<br>
+<br>
 ```{r}
+
 data.ahorro.es <- data %>%
   filter(na_item == 'B7N', unit == 'EUR_HAB', substr(geo,1,2) == 'ES', TIME_PERIOD == max(TIME_PERIOD) & NUTS == 2) %>%
-  arrange(values) %>%
-  mutate(
-    grupo_color = ifelse(full_name == "Canarias", "Canarias", "Otros")
-  )
+  arrange(values) 
 
 data.ahorro.es.plot <- data.ahorro.es %>% 
   ggplot(aes(x = reorder(full_name, values), 
              y = values,
              group = full_name,
-             fill = grupo_color, # Usamos 'fill' para el color de las barras
+             fill = values, 
              text = paste("Región: ", full_name,
                           "<br>Valores: ", values, "€"))) +
-  geom_col() + # Quitamos el color fijo
-  scale_fill_manual(values = c("Canarias" = "red", "Otros" = "#0072B2")) + # Asignamos el rojo a Canarias
+  
+  geom_col(width = 0.7, show.legend = FALSE) + 
+  
+  geom_col(data = . %>% filter(full_name == "Canarias"),
+           fill = "red", 
+           width = 0.7, 
+           show.legend = FALSE) +
+           
   coord_flip() +
+  scale_fill_gradient(low = "#87CEEB", high = "#1A476F") + 
   theme_minimal() +
   theme(
     axis.text.y = element_text(size = 9),
@@ -941,13 +954,234 @@ data.ahorro.es.plot <- data.ahorro.es %>%
     legend.position = 'none'
   ) +
   labs(
-    title = "Ahorro de los hogares por región Española (2022)",
+    title = "Nivel de ahorro per cápita por comunidad (España)",
     x = NULL,
     y = "Ahorro bruto (€ por habitante)"
-  )
+  ) + 
+  theme_bw(base_size = 12)
 
 ggplotly(data.ahorro.es.plot, tooltip = "text")
 ```
+
+<br>
+<br>
+
+En general, los países que mejor renta neta per cápita presentaban son los que se encuentran más arriba en esta gráfica, como vemos, Canarias se sitúa bastante abajo en estos términos.
+
+Para confirmar que efectivamente una mayor renta neta se traduce directamente en una mayor capacidad de ahorro neto, podemos echar un vistazo a este diagrama de dispersión animado que relaciona estos 2 conceptos por las diferentes comunidades autónomas a lo largo de los años.
+
+<br>
+<br>
+
+```{r}
+data.spain.disp <- data %>%
+  filter(
+    na_item %in% c("B6N", "B7N") &
+    substr(geo,1,2) == 'ES' &
+    NUTS == 2 &
+    unit == "EUR_HAB" 
+  ) %>%
+  pivot_wider(names_from = na_item, values_from = values) %>% 
+  rename(Año = TIME_PERIOD)
+
+
+data.spain.disp.plot <- data.spain.disp %>% 
+ggplot(aes(x = B6N,
+           y = B7N,
+           label = full_name,
+           text = paste("Región: ", full_name,
+                        "<br>Renta neta: ", B6N, "€",
+                        "<br>Ahorro neto: ", B7N, "€"))) +
+  geom_point(colour = "#1A476F", aes(size = 3, frame = Año)) +
+  labs(
+    title = "Relación entre renta y ahorro por comunidades de España",
+    x = "Renta disponible (€ por habitante)",
+    y = "Ahorro neto (€ por habitante)"
+  ) +
+  theme_minimal(base_size = 13) + 
+  theme(legend.position = 'none')
+
+ggplotly(data.spain.disp.plot, tooltip = "text") %>% 
+    animation_opts(frame = 200)
+
+```
+
+<br>
+<br>
+
+Como podemos ver existe una fuerte correlación entre la renta y el ahorro, en general las comunidades con mayor renta disponible también presentan mayor capacidad de ahorro.
+
+Las regiones como País Vasco, Navarra y Madrid se sitúan claramente por encima de la media nacional, mientras que Andalucía, Extremadura o Canarias presentan niveles más bajos tanto de renta como de ahorro.
+Esto sugiere diferencias estructurales regionales en el poder adquisitivo y la capacidad de ahorro de los hogares.
+
+Y con esta última conclusión de las diferencias estructurales regionales, sería interesante dividir la renta total de España entre las distintas regiones de esta (Norte, Sur, Este, Noreste, Noroeste, Centro, Madrid y Canarias) y representarlo mediante un diagrama de disco para que ver que porcentaje se lleva cada zona, antes de ver el gráfico debemos saber que comunidades se agrupan en las distintas regiones:
+
+* **Noroeste**: Galicia, Principado de Asturias y Cantabria.
+
+* **Noreste**: País Vasco, Comunidad Foral de Navarra, La Rioja y Aragón.
+
+* **Comunidad de Madrid**: Comunidad de Madrid (Constituye una región única debido a su relevancia económica).
+
+* **Centro**: Castilla y León, Castilla-La Mancha y Extremadura.
+
+* **Este**: Cataluña, Comunidad Valenciana e Islas Baleares.
+
+* **Sur**: Andalucía, Región de Murcia, Ceuta y Melilla.
+
+* **Canarias**: Canarias (Constituye una región única por su carácter insular).
+
+Tomaremos como unidad euros per cápita para que la población de cada zona no sea un factor influyente y sea una comparación efectiva.
+
+<br>
+<br>
+```{r,fig.asp = 0.8}
+data.spain.pie <- data %>%
+filter(substr(geo,1,2) == 'ES' & NUTS == 1 & na_item == 'B6N' & unit == 'EUR_HAB' & TIME_PERIOD == max(TIME_PERIOD)) %>%
+  arrange(desc(values)) %>%
+  mutate(porcentaje = scales::percent(values/sum(values))) %>%
+  select(full_name, values, porcentaje)
+
+data.spain.pie %>%
+  plotly::plot_ly(
+    labels = ~full_name,
+    values = ~values,
+    
+    text =  ~paste("Región: ", data.spain.pie$full_name),
+    textinfo = 'percent',
+    insidetextorientation='radial',
+    hoverinfo = "text") %>% 
+  add_pie(hole = 0.4) %>% 
+  layout(
+    title = list(text = "Distribución de la Renta Neta por Regiones de España")
+  )
+
+
+
+```
+
+<br>
+<br>
+
+Tras analizar la gráfica de disco, vemos que efectivamente las regiones del sur de España y Canarias presentan un menor poder adquisitivo y por consecuente, una menor capacidad de ahorro. La mayor parte de la renta cae sobre Madrid y las regiones del Noreste y Noroeste.
+
+<br>
+<br>
+
+Ya que conocemos bien la renta neta que presenta cada comunidad en España, echemos un vistazo ahora a los impuestos sobre renta y patrimonio que se pagan en cada una, medidos en euros por habitante y representados mediante un mapa de calor. Tenemos datos desde el año 2016 hasta el 2022.
+
+<br>
+<br>
+
+```{r}
+data.imp.comunidades <- data %>%
+  filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 2 & TIME_PERIOD > 2015 & TIME_PERIOD < 2023 & substr(geo,1,2) == 'ES') %>%
+  select(geo, full_name, TIME_PERIOD, values) %>%
+  arrange(desc(values)) 
+
+data.imp.comunidades <- data.imp.comunidades %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+  mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
+  arrange(desc(imp.per.capita))
+
+data.imp.comunidades.plot <- data.imp.comunidades %>%
+  ggplot(aes(x = TIME_PERIOD,
+             y = full_name,
+             fill=imp.per.capita,
+             text = paste("Año: ", TIME_PERIOD,
+                          "<br>Región: ", full_name,
+                          "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
+  geom_tile(color = "grey80") +
+  scale_fill_gradient2(
+    low = "#1A476F",      
+    mid = "#87CEEB",      
+    high = "#1A476F",      
+    midpoint = 0,          
+    space = "Lab",         
+    name = "Impuestos"      
+) + 
+  labs(title="Impuestos sobre renta y patrimonio pagados (2016-2022)",
+       subtitle = "2016-2022",
+       x="Año",
+       y="Comunidades (España)",
+       fill = "Impuestos per cápita") + 
+  theme_bw(base_size = 12)
+
+ggplotly(data.imp.comunidades.plot, tooltip = "text")
+```
+
+<br>
+<br>
+
+El mapa de calor de Impuestos sobre Renta y Patrimonio (D.5) per cápita entre 2016 y 2022 es, en realidad, un mapa de la riqueza regional de España. Los tonos más oscuros confirman la relación fundamental de la fiscalidad: las comunidades que más pagan son las que más generan.
+
+**Riqueza como Causa**: Regiones como la Comunidad de Madrid, el País Vasco y Navarra muestran la mayor presión fiscal directa (azul intenso). Esto se debe a que su Renta Disponible Neta es históricamente más alta, lo que automáticamente eleva el pago del IRPF debido a su naturaleza progresiva. El alto nivel de impuestos es el resultado de una base imponible (ingresos) superior.
+
+**Doble Medición del Impuesto**: La variación en D.5 también subraya que no solo mide la renta generada en el año:
+
+  *El IRPF refleja los ingresos corrientes.
+
+  *Los impuestos patrimoniales (como el IBI) reflejan la riqueza acumulada (stock). Esto explica por qué regiones con alto valor inmobiliario, como las Islas Baleares, pueden tener una alta contribución fiscal per cápita.
+
+**Consecuencia Económica**: La intensificación general del color azul después de 2020 indica un crecimiento de la renta nominal en el país. En última instancia, esta alta contribución fiscal en las regiones líderes confirma su rol como motores económicos: a pesar de pagar los impuestos más altos, su capacidad de Ingreso y su alto Ahorro Neto (B7N) residual las identifica como los principales centros de acumulación de capital de España.
+ 
+
+<br>
+<br>
+
+Para finalizar con las comunidades de España, veamos mediante un diagrama de cajas, como se distribuyen los 3 principales indicadores económicos, Ingreso primario neto, Renta neta y Ahorro neto por las distintas comunidades españolas en euros por habitante.
+
+```{r}
+label_mapping <- c(
+  "B5N" = "Ingreso Primario Neto",
+  "B6N" = "Ingreso Disponible Neto",
+  "B7N" = "Ahorro Neto"
+)
+
+data.spain.box <- data %>% 
+  filter(NUTS == 2 & substr(geo,1,2) == 'ES' & na_item %in% c('B5N', 'B6N', 'B7N') & unit == 'EUR_HAB') %>% 
+  pivot_wider(names_from = unit, values_from = values) %>%
+  mutate(
+    nombre_indicador = label_mapping[na_item]
+  )
+
+data.spain.box.plot <- data.spain.box %>% 
+  ggplot(aes(x = nombre_indicador, 
+             y = EUR_HAB,
+             fill = nombre_indicador,
+             text = paste("Indicador: ",nombre_indicador,
+                          "<br>Año: ",TIME_PERIOD,
+                          "<br>Región: ",full_name))) +
+  geom_boxplot(alpha = 0.7, color = "black", outlier.color = "red") +
+  scale_fill_manual(
+    values = c(
+      "Ingreso Primario Neto" = "#FDAE61", 
+      "Ingreso Disponible Neto" = "#2C7BB6", 
+      "Ahorro Neto" = "#66BD63"
+    )
+  ) +
+  labs(
+    title = "Comparación de tipos de ingreso en regiones españolas",
+    subtitle = "Distribución del euro per cápita",
+    x = "Tipo de ingreso",
+    y = "€ por habitante",
+    fill = "Tipo de ingreso"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 13),
+    legend.position = "top"
+  )
+
+ggplotly(data.spain.box.plot, tooltip = 'text')
+```
+
+<br>
+<br>
+
+Como comentábamos, este gráfico muestra la distribución de los distintos tipos de ingreso por habitante en las regiones españolas. Se observa que el ingreso primario (B5N) es el más alto y disperso, mientras que el ingreso disponible (B6N) se reduce tras impuestos y transferencias, evidenciando el efecto redistributivo. El ahorro (B7N) presenta mayor variabilidad, reflejando diferencias regionales en la capacidad de ahorro. Los outliers principalmente se corresponden con regiones con niveles excepcionalmente altos en estos indicadores, sobretodo Madrid y País Vasco como ya hemos visto, donde el PIB y las rentas tienden a ser más elevadas.
+
+<hr>
+<br>
 
 ```{r}
 ParetoValue <- function(
@@ -959,8 +1193,11 @@ ParetoSignificancia # número en [0,1] con el grado de significancia de Pareto
 }
 ```
 
+Centrémonos ahora en visualizar y comparar a España como país, en este caso tendremos que usar unidades PPS mayoritariamente siempre que el dataset nos ofrezca datos en esta unidad, ya que estamos comparando distintos países. 
 
-Ahora vamos a ver un top 10 de los países con mejor renta neta por habitante medido en unidades PPS que nos permitirán hacer una comparación justa entre países.
+En primer lugar vamos a utilizar una función de pareto para quedarnos con los países que poseen el 80% de la renta neta de Europa entre los cuales se encuentra España y vamos a ver un gráfico de barras animado que nos muestra la evolución de esos países cada año.
+
+<br>
 
 ```{r}
 data.top.rentaPPS.pareto <- data %>%
@@ -997,229 +1234,192 @@ data.top10PPS.plot <- data.top10PPS.plot %>%
 animate(data.top10PPS.plot, fps = 2, end_pause = 10)
 ```
 
-```{r}
-data.imp.comunidades <- data %>%
-  filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 2 & TIME_PERIOD > 2015 & TIME_PERIOD < 2023 & substr(geo,1,2) == 'ES') %>%
-  select(geo, full_name, TIME_PERIOD, values) %>%
-  arrange(desc(values)) 
+<br>
 
-data.imp.comunidades <- data.imp.comunidades %>% 
-  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
-  mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
-  arrange(desc(imp.per.capita))
+Vemos que, en general, España es un país que se mueve en valores de renta cercanos a los de la media de la Unión Europea. El declive posterior a 2008 es un reflejo de la fuerte dependencia de España de sectores cíclicos (como la construcción y el turismo) y del alto desempleo estructural. Mientras que las economías industriales del norte rebotaron con relativa rapidez tras la crisis financiera, el crecimiento de la renta española se estancó. Vemos que los dos países con mejores niveles de renta neta per cápita son Luxemburgo y Alemania, vamos a comentar estos dos casos por separado.
 
-data.imp.comunidades.plot <- data.imp.comunidades %>%
-  ggplot(aes(x = TIME_PERIOD,
-             y = full_name,
-             fill=imp.per.capita,
-             text = paste("Año: ", TIME_PERIOD,
-                          "<br>Región: ", full_name,
-                          "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
-  geom_tile(color = "grey80") +
-  scale_fill_gradient(low = "white", 
-                      high = "steelblue") +
-  labs(title="Impuestos sobre renta y patrimonio",
-       subtitle = "2016-2022",
-       x="Año",
-       y="País",
-       fill = "Impuestos per cápita")
+Luxemburgo es un caso atípico que distorsiona las métricas macroeconómicas de renta per cápita, lo cual es importante para interpretar cualquier resultado:
 
-ggplotly(data.imp.comunidades.plot, tooltip = "text")
-```
+ * **Centro Fiscal**: Gran parte de la renta contable se genera por los beneficios de   empresas multinacionales y los flujos financieros que se registran en el país por    motivos fiscales.
 
+* **Efecto de Denominador**: Al ser un país pequeño, cuando estos flujos de capital    se dividen por una población relativamente reducida, la cifra per cápita se dispara   artificialmente, sin que este aumento refleje necesariamente el poder adquisitivo    directo del trabajador promedio residente.
 
-Vamos a observar con un mapa de calor los impuestos en millones de euros que ha ido pagando cada país (como conjunto) desde 2016 hasta 2022. Para este caso, dado que el dataset no nos ofrece una opción para ver el número de impuestos per cápita, utilizaremos el dataset secundario de población que hemos añadido anteriormente y haremos las operaciones necesarias para normalizar estos valores transformándolos a per cápita. Hay que tener en cuenta que los valores de los impuestos están en millones de euros y los de la población en miles de personas.
+La alta renta alemana se sustenta en su potente base industrial y manufacturera.
 
-```{r,fig.asp = 0.9}
-data.imp <- data %>%
-  filter(na_item == 'D5' & unit == 'MIO_EUR' & NUTS == 0, TIME_PERIOD > 2015 & TIME_PERIOD < 2023) %>%
-  select(geo, full_name, TIME_PERIOD, values) %>%
-  arrange(desc(values)) 
+  * **Valor Añadido Bruto** (VAB): El enfoque en la ingeniería, la automoción de alta     gama y la química asegura que la producción nacional genere un VAB elevado.
 
-data.imp <- data.imp %>% 
-  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
-  mutate(imp.per.capita = (values * 1000000) / (poblacion * 1000)) %>%
-  arrange(desc(imp.per.capita))
+  * **Estabilidad**: Esta estructura de exportación de bienes de capital proporciona     una fuente de ingresos nacionales estable y constante, lo que se traslada a          salarios altos y, por ende, a una renta disponible por habitante consistentemente     superior a la media.
 
-data.imp.plot <- data.imp %>%
-  ggplot(aes(x = TIME_PERIOD,
-             y = full_name,
-             fill=imp.per.capita,
-             text = paste("Año: ", TIME_PERIOD,
-                          "<br>Región: ", full_name,
-                          "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
-  geom_tile(color = "grey80") +
-  scale_fill_gradient(low = "white", 
-                      high = "steelblue") +
-  labs(title="Impuestos sobre renta y patrimonio",
-       subtitle = "2016-2022",
-       x="Año",
-       y="País",
-       fill = "Impuestos per cápita")
+<br>
+<br>
 
-ggplotly(data.imp.plot, tooltip = "text")
-```
+Continuémos viendo la evolución económica de los países, en este caso vamos a echar un vistazo a la evolución del ingreso primario neto, es decir, los ingresos brutos per cápita de cada país medidos en unidades PPS. Dado que Europa tiene muchos países, utilizaremos de nuevo la función de Pareto para quedarnos solo con los que poseen el 80% de este valor.
 
-Ahora, separemos España en 6 zonas (incluyendo Canarias) y veamos que proporción de la renta total se lleva cada parte. 
-
-```{r,fig.asp = 0.8}
-data.spain.pie <- data %>%
-filter(substr(geo,1,2) == 'ES' & NUTS == 1 & na_item == 'B6N' & unit == 'MIO_EUR' & TIME_PERIOD == max(TIME_PERIOD)) %>%
-  arrange(desc(values)) %>%
-  filter(full_name != 'Comunidad de Madrid') %>%
-  mutate(porcentaje = scales::percent(values/sum(values))) %>%
-  select(full_name, values, porcentaje)
-
-data.spain.pie %>%
-  plotly::plot_ly(
-    labels = ~full_name,
-    values = ~values,
-    
-    text =  ~paste("Región: ", data.spain.pie$full_name),
-    textinfo = 'percent',
-    insidetextorientation='radial',
-    hoverinfo = "text") %>% 
-  add_pie(hole = 0.4) %>% 
-  layout(
-    title = list(text = "Distribución de la Renta Neta por Regiones de España")
-  )
-  
-
-
-```
-
-Vamos a ver una gráfica por países que nos mostrará, el ingreso primario neto, la renta neta y la diferencia entre ambos, con esto podremos ver cuanto se descuenta en cada país del salario bruto.
+En este caso lo visualizaremos esto con un gráfico de líneas en lugar de uno de barras animado.
 
 ```{r}
+
+paises.comparar <- c("Italy", "Portugal", "Greece", "Germany", "France", "Netherlands", "Luxembourg", "Ireland", "Canarias", "Sweden", "Austria", "Poland", "Czechia", "Media UE", "Spain")
+
+datats.evolucion.ingresoprimario <- data %>% 
+  mutate(full_name = ifelse(geo == 'EU27_2020', "Media UE", full_name)) %>% 
+  filter(((NUTS == 0) | (geo == 'EU27_2020') | (full_name == 'Canarias' & NUTS == 2)) & na_item == 'B5N' & unit == 'PPS_EU27_2020_HAB' & full_name %in% paises.comparar) %>% 
+  select(full_name, TIME_PERIOD, values) %>% 
+  rename(Paises = full_name,
+         Año = TIME_PERIOD,
+         valores = values) %>% 
+  arrange(Año, valores) %>% 
+  as_tsibble(index = Año, key = Paises) %>% 
+  fill_gaps()
+```
+
+```{r}
+datats.evolucion.ingresoprimario %>% 
+  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>% 
+  hc_title(text = "Evolución del Ingreso Primario por País") %>% 
+  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
+
+```
+
+<br>
+
+En general con este gráfico llegamos a las mismas conclusiones que antes pero, sin embargo, este nos permite más enforcanos que valores toma España con respecto a la media de la Unión Europea, vemos con claridad que hasta antes de la crisis del 2008 España se situaba por encima de esta y que después de dicha crisis no consigue recuperase de la misma manera a pesar de que la tendencia sigue siendo ascendente.
+
+
+<br>
+<br>
+
+Y bueno ya que venimos viendo la evolución del ingreso primario neto (ingreso bruto), puede ser interesante ver en cada país la intervención del Estado sobre este ingreso primario, es decir, cuánto dinero pierde o gana un hogar después de que el Estado aplica impuestos y devuelve beneficios, para este caso también incluiremos a Canarias junto con los países.
+
+Para cuantificar y visualizar el impacto de la intervención del Estado en el ingreso de los hogares, se utiliza la Renta Disponible Neta, la cual, por definición en las cuentas nacionales, es el resultado final después de aplicar impuestos y transferencias sociales.
+
+Es crucial entender que la Renta Disponible Neta ya incorpora las prestaciones sociales recibidas y otros beneficios, y por tanto, no es necesario incluirlas en la fórmula de cálculo.
+
+ * Si el resultado es POSITIVO (Ingreso Primario > Renta Neta): El país es un **Pagador Neto** (El Estado quita más de lo que devuelve).
+
+ * Si el resultado es NEGATIVO (Ingreso Primario < Renta Neta): El país es un **Receptor Neto** (El Estado devuelve más de lo que quita).
+```{r}
+
 data.diff.paises <- data %>% 
-  filter(((NUTS == 0) | (full_name == 'Canarias' & NUTS == 2)) & na_item %in% c("B5N", "B6N", "D62"), unit == 'MIO_EUR', TIME_PERIOD == max(TIME_PERIOD),
-         (!na_item == "D62" | direct == "RECV"), !full_name %in% c('Slovakia',"Slovenia", "Czechia")) %>%
+  filter(((NUTS == 0) | (full_name == 'Canarias' & NUTS == 2)) & na_item %in% c("B5N", "B6N"), unit == 'MIO_EUR', TIME_PERIOD == max(TIME_PERIOD)) %>%
   select(-direct) %>% 
   left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
   mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
   select(-values) %>% 
   rename(values = per.capita) %>% 
   pivot_wider(names_from = na_item, values_from = values) %>% 
-  mutate(Diferencia = B5N - (B6N - D62)) %>% 
+  mutate(Diferencia = B5N - B6N) %>% 
   rename(Región = full_name,
          Año = TIME_PERIOD,
          `Ingreso primario neto` = B5N,
-         `Renta neta` = B6N,
-         `Prestaciones sociales recibidas` = D62) %>% 
-  select(Región, Año, `Ingreso primario neto`, `Renta neta`,`Prestaciones sociales recibidas`, Diferencia)
+         `Renta neta` = B6N) %>% 
+  select(Región, Año, `Ingreso primario neto`, `Renta neta`, Diferencia)
 
-p <- data.diff.paises %>% 
-  rename(`Ingreso primario` = `Ingreso primario neto`,
-         Prest.soc.recib = `Prestaciones sociales recibidas`) %>% 
-  pivot_longer(`Ingreso primario`:`Diferencia`, names_to = 'Indicador', values_to = 'valores') %>% 
-  ggplot(aes(x = Indicador,
-             y = valores,
-             fill = Indicador,
+
+```
+
+```{r}
+p_diferencia <- data.diff.paises %>%
+  ggplot(aes(x = reorder(Región, Diferencia), 
+             y = Diferencia,
+             fill = Diferencia,
              text = paste("Región:", Región,
-                          "<br>",Indicador,":", round(valores,1), "€/HAB"))) +
-    geom_bar(stat = 'identity') + 
-    facet_wrap(~ Región) +
-    theme_bw(base_size = 14) +
-     theme(
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank(),
-        axis.ticks.x = element_blank()
-    )
-  
-  ggplotly(p, tooltip = "text")
+                          "<br>Impacto Neto:", round(Diferencia, 1), "€/HAB"))) +
+  geom_col() +
+  coord_flip() + 
+  scale_fill_gradient2(
+      low = "#3366CC",       
+      mid = "#ADD8E6",         
+      high = "#DC3912",      
+      midpoint = 0,          
+      labels = scales::comma 
+  ) +
+  geom_hline(yintercept = 0, color = "black", linewidth = 0.8) + 
+  labs(title = "Efecto Neto de la Redistribución Fiscal",
+       x = "",
+       y = "",
+       fill = "Efecto Neto (€/HAB)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom")
+
+ggplotly(p_diferencia, tooltip = "text")
 ```
 
+<br>
 
+El gráfico de Efecto Neto de la Redistribución Fiscal muestra una clara y pronunciada polarización económica en Europa, revelando la diferencia entre el Ingreso Primario y la Renta Disponible.
 
-A continuación vamos a ver la relación entre las ganancias y los ahorros por habitante, veremos si más renta implica más ahorro por países. Como podemos ver existe una fuerte relación entre la renta y el ahorro, en general las comunidades con mayor renta disponible también presentan mayor capacidad de ahorro.
+El resultado evidencia que las economías se dividen en dos grandes grupos:
 
-Las regiones como País Vasco, Navarra y Madrid se sitúan claramente por encima de la media nacional, mientras que Andalucía, Extremadura o Canarias presentan niveles más bajos tanto de renta como de ahorro.
-Esto sugiere diferencias estructurales regionales en el poder adquisitivo y la capacidad de ahorro de los hogares.
+* **Pagadores Netos (Contribuyentes):** Los países del Norte y Centro de Europa (Dinamarca, Países Bajos, Luxemburgo y Alemania) son los mayores contribuyentes netos, con un hogar promedio que cede entre 8.000€ y 10.000€ al Estado después de impuestos y transferencias. Esta fuerte presión fiscal refleja la financiación de robustos Estados de Bienestar y la alta recaudación.
 
-```{r}
-data.spain.disp <- data %>%
-  filter(
-    na_item %in% c("B6N", "B7N") &
-    substr(geo,1,2) == 'ES' &
-    NUTS == 2 &
-    unit == "EUR_HAB" 
-  ) %>%
-  pivot_wider(names_from = na_item, values_from = values) %>% 
-  rename(Año = TIME_PERIOD)
+* **Receptores Netos (Asistencia):** En contraste, las economías del Sur y del Este de Europa (incluyendo Grecia, Polonia, Portugal, y Eslovaquia) se sitúan cerca del valor cero o son receptores netos, lo que indica que las prestaciones y transferencias sociales que reciben sus hogares son casi iguales o superiores a los impuestos que pagan.
 
+**España** se sitúa como un contribuyente neto moderado, lejos de las cifras de cabeza, pero todavía con una contribución positiva, mientras que las regiones periféricas y más débiles (como Canarias en la lista) son, en esencia, fiscalmente neutrales.
 
-data.spain.disp.plot <- data.spain.disp %>% 
-ggplot(aes(x = B6N,
-           y = B7N,
-           label = full_name,
-           text = paste("Región: ", full_name,
-                        "<br>Renta neta: ", B6N, "€",
-                        "<br>Ahorro neto: ", B7N, "€"))) +
-  geom_point(colour = "steelblue", aes(size = 3, frame = Año)) +
-  labs(
-    title = "Relación entre renta y ahorro por comunidades de España",
-    x = "Renta disponible (€ por habitante)",
-    y = "Ahorro neto (€ por habitante)"
-  ) +
-  theme_minimal(base_size = 13) + 
-  theme(legend.position = 'none')
+<br>
+<br>
 
-ggplotly(data.spain.disp.plot, tooltip = "text") %>% 
-    animation_opts(frame = 200)
+En el análisis anterior, vimos el saldo final de la intervención del Estado, identificando qué países eran contribuyentes netos (Pagadores Netos) y cuáles dependían más de las ayudas sociales (Receptores Netos).
 
+Ahora, para entender mejor la magnitud de la diferencia que genera ese saldo, nos centraremos en la salida de recursos obligatoria que soporta cada hogar.
+
+Para calcular esta carga fiscal directa sobre el ingreso, sumamos dos componentes clave que restan directamente de la renta de las familias: los **Impuestos Corrientes sobre Renta y Patrimonio** y las **Cotizaciones Sociales Netas**. 
+
+Este mapa de calor nos permitirá visualizar qué países y regiones tienen la mayor presión sobre el ingreso per cápita, la cual es necesaria para sostener sus respectivos sistemas de bienestar.
+
+```{r,fig.asp = 0.9}
+
+data.imp <- data %>%
+  filter(na_item %in% c('D5', 'D61') & unit == 'MIO_EUR' & NUTS == 0, TIME_PERIOD > 2015 & TIME_PERIOD < 2023, direct == 'PAID') %>%
+  select(-direct) %>% 
+  pivot_wider(names_from = na_item, values_from = values) %>%
+  mutate(Impuestos = D5 + D61) %>% 
+  select(geo, full_name, TIME_PERIOD, Impuestos) %>%
+  arrange(desc(Impuestos)) 
+
+data.imp <- data.imp %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+  mutate(Impuestos.pagados = (Impuestos * 1000000) / (poblacion * 1000)) %>%
+  arrange(desc(Impuestos.pagados))
+
+data.imp.plot <- data.imp %>%
+  ggplot(aes(x = TIME_PERIOD,
+             y = full_name,
+             fill=Impuestos.pagados,
+             text = paste("Año: ", TIME_PERIOD,
+                          "<br>Región: ", full_name,
+                          "<br>Valores: ", round(Impuestos.pagados,1), "€/HAB"))) +
+  geom_tile(color = "black", linewidth = 0.5) +
+  scale_fill_gradient2(
+    low = "#1A476F",      
+    mid = "#87CEEB",      
+    high = "#1A476F",      
+    midpoint = 0,          
+    space = "Lab",         
+    name = "Presión fiscal (€/HAB)"      
+) + 
+  labs(title="Presión Fiscal Directa sobre la Renta (2016-2022)",
+       x="Año",
+       y="País") + 
+  theme_bw(base_size = 12)
+
+ggplotly(data.imp.plot, tooltip = "text")
 ```
+<br>
 
+El mapa de calor de la Carga Fiscal Directa y Contribuciones Sociales (D5+D61) revela una nítida polarización entre la Europa del Norte y la del Este, lo cual confirma la solidez de los Estados de Bienestar en las regiones más ricas.
 
+El análisis muestra que los países escandinavos y del Benelux (Dinamarca, Países Bajos y Suecia) imponen la mayor presión fiscal directa sobre el ingreso (por encima de los 20.000€ per cápita en varios casos), lo cual se debe a la financiación de sus amplios sistemas de seguridad social. En contraste, países con economías de menor escala (como Bulgaria, Croacia o Rumania) muestran la carga fiscal más baja. España se posiciona en un nivel intermedio-alto de contribución fiscal, lo cual es coherente con su rol como economía grande en la Eurozona.
 
-El gráfico muestra la distribución de los distintos tipos de ingreso por habitante en las regiones españolas. Se observa que el ingreso primario (B5N) es el más alto y disperso, mientras que el ingreso disponible (B6N) se reduce tras impuestos y transferencias, evidenciando el efecto redistributivo. El ahorro (B7N) presenta mayor variabilidad, reflejando diferencias regionales en la capacidad de ahorro. Los outliers pueden corresponder a regiones con niveles excepcionalmente altos, probablemente Madrid o Cataluña, donde el PIB y las rentas tienden a ser más elevadas.
+El dato curioso es que esta visualización confirma que los países con la mayor presión fiscal (Dinamarca, Países Bajos) son precisamente los que resultaron ser Pagadores Netos en el análisis anterior, demostrando que la magnitud de la recaudación es la que dicta el saldo fiscal final.
 
-```{r}
-label_mapping <- c(
-  "B5N" = "Ingreso Primario Neto",
-  "B6N" = "Ingreso Disponible Neto",
-  "B7N" = "Ahorro Neto"
-)
+<br>
+<br>
 
-data.spain.box <- data %>% 
-  filter(NUTS == 2 & substr(geo,1,2) == 'ES' & na_item %in% c('B5N', 'B6N', 'B7N') & unit == 'EUR_HAB') %>% 
-  pivot_wider(names_from = unit, values_from = values) %>%
-  mutate(
-    nombre_indicador = label_mapping[na_item]
-  )
+Hemos analizado la presión fiscal directa sobre el ingreso de los hogares, que es el coste necesario para financiar los sistemas de bienestar y Cotizaciones. Ahora, es el momento de examinar el resultado final de esa riqueza generada y la capacidad de inversión.
 
-data.spain.box.plot <- data.spain.box %>% 
-  ggplot(aes(x = nombre_indicador, 
-             y = EUR_HAB,
-             fill = nombre_indicador,
-             text = paste("Indicador: ",nombre_indicador,
-                          "<br>Año: ",TIME_PERIOD,
-                          "<br>Región: ",full_name))) +
-  geom_boxplot(alpha = 0.7, color = "black", outlier.color = "red") +
-     geom_jitter(shape=16, position=position_jitter(0.2))+
-  scale_fill_manual(
-    values = c(
-      "Ingreso Primario Neto" = "#FDAE61", 
-      "Ingreso Disponible Neto" = "#2C7BB6", 
-      "Ahorro Neto" = "#66BD63"
-    )
-  ) +
-  labs(
-    title = "Comparación de tipos de ingreso en regiones españolas",
-    subtitle = "Distribución del euro per cápita",
-    x = "Tipo de ingreso",
-    y = "€ por habitante",
-    fill = "Tipo de ingreso"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 13),
-    legend.position = "top"
-  )
-
-ggplotly(data.spain.box.plot, tooltip = 'text')
-```
-
-Por último para tener una visión general, veamos unos mapas coropléticos con los valores sobre varios indicadores económicos en el último año de las observaciones (2022). Haremos mapas tanto a nivel de NUTS 0 como NUTS 2, para ello cargamos la información necesaria.
+Por último, cerramos el apartado con una visión geográfica y detallada del último año de datos (2022). Usaremos dos mapas coropléticos a nivel de regiones NUTS2 para ver cómo se distribuyen la **Renta Disponible Neta** y la **Inversión en Activos Fijos,** lo que nos permitirá extraer conclusiones específicas sobre los focos geográficos de mayor riqueza y dinamismo económico en Europa, utilizaremos unidades PPS para el caso de la Renta Neta y euros por habitante para el caso de la Inversión en Activos Fijos, ya que no tenemos datos con unidades PPS.
 
 ```{r}
 geoj <- geojson_read("https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2024_4326_LEVL_0.geojson",  what = "sp")
@@ -1237,11 +1437,6 @@ geoj2.tb <- geoj2 %>%
   rename(geo = NUTS_ID)
 ```
 
-Empecemos por una visión general de la renta neta.
-
-
-
-Veamos ahora la renta pero en este caso para regiones NUTS2.
 
 ```{r}
 mapa.NUTS2.renta <- data %>% 
@@ -1258,8 +1453,20 @@ etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
 leyenda <- "Renta neta<br>disponible"
 MapaCoroplético(geoj2, mapa.NUTS2.renta.join$values, etiquetas, leyenda)
 ```
+<br>
 
+De este primer mapa podemos sacar las siguientes conclusiones:
 
+* **El Eje Central de Riqueza:** La renta disponible más alta (tonos rojos) se concentra claramente en el eje central de Europa (el 'Arco de la Riqueza'): el sureste del Reino Unido (Londres), Benelux, el oeste y sur de Alemania (Baden-Württemberg, Baviera) y Escandinavia. Esto confirma que los países con la mayor presión fiscal directa son los que también tienen la mayor renta per cápita.
+
+* **Disparidad Extrema:** Existe un fuerte clivaje (división) Norte-Oeste/Sur-Este. La renta cae drásticamente en todo el Sur (Italia, Portugal, Grecia) y en los países de la ampliación oriental, que están en el rango más bajo (tonos amarillos).
+
+* **Efecto Capital:** Las capitales y los centros financieros (París, Dublín, Praga, Viena) se destacan como islas de alta renta (puntos rojos oscuros), reflejando la concentración de servicios de alto valor añadido.
+
+* **Caso de España:** España muestra una notable disparidad intra-nacional. Mientras que regiones como Madrid y el País Vasco se sitúan en el rango medio-alto de la UE, la mayor parte del territorio, especialmente Andalucía y Extremadura, se encuentra en el rango medio-bajo, alineado con el sur de Italia.
+
+<br>
+<br>
 ```{r}
 mapa.NUTS2.inversionactivos <- data %>% 
   filter(NUTS == 2, na_item == "P51C", unit == "MIO_EUR", TIME_PERIOD == max(TIME_PERIOD)) %>% 
@@ -1279,9 +1486,157 @@ etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
 leyenda <- "Inversión en<br>activos fijos"
 MapaCoroplético(geoj2, mapa.NUTS2.inversionactivos.join$values, etiquetas, leyenda)
 ```
+<br>
 
+El mapa de la Formación Bruta de Capital Fijo revela que la inversión productiva se concentra en un eje muy específico de Europa Occidental y Central, que está desvinculado de la distribución de la renta disponible.
+
+* **Foco de Capitalización:** Los niveles de inversión más altos (tonos rojos intensos) se concentran en el tradicional "Cinturón Industrial" que abarca Francia, el norte de Italia (el principal foco), y el sur de Alemania/Austria.
+
+* **Disparidad con la Renta:** A diferencia del mapa de renta, donde Italia y Francia tenían niveles intermedios, aquí muestran la mayor intensidad de inversión. Esto sugiere que, si bien la renta disponible per cápita en estos países es menor que en Holanda o Dinamarca, el capital productivo se está inyectando con mayor fuerza en sus bases industriales.
+
+* **Caso Español:** España y Portugal se encuentran consistentemente en el rango bajo a medio (tonos amarillos y naranjas claros), lo que indica un **atraso estructural en la inversión productiva** en comparación con el núcleo industrial de la Eurozona.
+
+<br>
+<hr>
+
+Todas las gráficas vistas en este apartado se encuentran presentes en el **cuadro de mandos** del proyecto, en donde se permite una mayor exploración en profundidad de las distintas variables y las distintas regiones.
 
 ## Modelado
+
+
+Empecemos viendo una predicción por comunidades de España de sobre los futuros niveles de renta neta per cápita.
+
+```{r}
+datats.renta.spain.comunidades <- data %>% 
+  filter(((NUTS == 2 & substr(geo,1,2) == 'ES') | (geo == 'EU27_2020')), unit == 'EUR_HAB', na_item == 'B6N' & TIME_PERIOD > 2001) %>% 
+  mutate(full_name = ifelse(geo == 'EU27_2020', 'Media UE', full_name)) %>% 
+  select(TIME_PERIOD, values, full_name) %>% 
+  arrange(TIME_PERIOD) %>% 
+  rename(Año = TIME_PERIOD,
+         valores = values,
+         Región = full_name) %>% 
+  as_tsibble(index = Año, key = Región) %>%
+  fill_gaps()
+
+```
+
+
+```{r, results = 'hide'}
+datats.renta.spain.comunidades.arima <- datats.renta.spain.comunidades %>% 
+  model(ARIMA()) 
+  
+```
+
+```{r}
+datats.renta.spain.comunidades.arima.pred <- datats.renta.spain.comunidades.arima %>% 
+  forecast(h = 8) 
+
+p <- datats.renta.spain.comunidades.arima.pred %>% 
+  autoplot(datats.renta.spain.comunidades) + 
+  theme_bw(base_size = 10) +
+  facet_wrap(~Región,
+             nrow = 4,           
+             labeller = labeller(Región = label_wrap_gen(width = 15))) + 
+  labs(x = "Año", y = "Renta neta (€/HAB)", title = "Evolución Renta Neta (Comunidades España)") +
+ theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position = "none") +
+  theme(
+    plot.margin = margin(t = 45, r = 10, b = 10, l = 10, unit = "pt"),
+    plot.title = element_text(face = "bold", margin = margin(b = 60)),
+    axis.title.y = element_text(margin = margin(r = 10)), 
+    axis.title.x = element_text(margin = margin(t = 15)),
+    strip.text = element_text(margin = margin(t = 13, r = 7, b = 10, l = 7)),
+    panel.spacing.x = unit(1, "lines"), 
+    panel.spacing.y = unit(2, "lines")) 
+ 
+ggplotly(p, height = 900, tooltip = c("Año", "valores"))
+
+```
+
+Vamos ahora con un análisis de PCA por comunidades de España.
+
+
+```{r}
+
+mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
+"D61" = "cotizaciones_sociales (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
+
+indicadores.pca <- c("B2A3N", "B5N",   "B6N",   "B7N",   "D4",    "D5",    "D61",   "D62", "D7", "P51C","D1", "D63","P3")
+
+pca.comunidades.orig <- data  %>% 
+  filter(unit == 'MIO_EUR', NUTS == 2, substr(geo,1,2) == 'ES', na_item %in% indicadores.pca, TIME_PERIOD == 2022) %>% 
+  left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+  mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+  select(-values) %>% 
+  rename(values = per.capita) %>% 
+  mutate(na_item = dplyr::recode(na_item, !!!mapa_codigos_cortos)) %>%
+  mutate(atrib.comb = paste(na_item, "/", direct)) %>% 
+  select(full_name, atrib.comb, values) %>% 
+  pivot_wider(names_from = atrib.comb, values_from = values) %>% 
+  rename(Región = full_name) %>% 
+  na.omit()
+
+
+
+```
+
+```{r}
+pca.comunidades.atribest <- pca.comunidades.orig %>% 
+  column_to_rownames(var="Región") %>%
+  scale() %>%
+  as_tibble() %>% 
+  mutate(Región = pca.comunidades.orig$Región) %>%
+  relocate(Región)
+```
+
+```{r}
+pca.comunidades <- pca.comunidades.atribest %>% 
+    column_to_rownames(var="Región") 
+
+pca.comunidades.modelo <- prcomp(pca.comunidades,scale = TRUE)
+```
+
+```{r}
+pca.comunidades.pesoscomb <- as_tibble(pca.comunidades.modelo$rotation, rownames = "Indicador")
+```
+
+```{r}
+pca <- pca.comunidades.modelo
+    
+p <- tibble(
+  label=fct_inorder(paste("PC",1:length(pca$sdev))),
+  varPercent = pca$sdev^2/sum(pca$sdev^2) * 100
+) %>%
+  ggplot(aes(x=label,
+             y=varPercent,
+             fill = label,
+             text = paste("Componente:", label, 
+                          "<br>Varianza:", round(varPercent, 2), "%"))) +
+    geom_bar(stat = "identity") +
+    labs(x= "Componentes Principales", 
+          y= "Porcentaje varianza explicada"
+    )+
+   geom_text(aes(label=paste0(round(varPercent,digits = 1),"%")), 
+                 size=3,
+                 colour = "blue",
+                 nudge_y = 1.
+             ) + 
+   theme(legend.position = 'none')
+
+ggplotly(p, tooltip = 'text')
+```
+
+```{r}
+hchart(pca.comunidades.modelo, choices = c(1, 2)) %>% 
+ hc_tooltip(
+ useHTML = TRUE,
+ headerFormat = "{point.key}<br>"
+ ) 
+```
+
+
+
+
 
 Vamos a analizar la evolución de la renta neta por habitante en España. Filtraremos a partir del año 2002 ya que fue cuando se introdujo el euro a España.
 ```{r}
@@ -1298,6 +1653,7 @@ datatsrenta.spain <- data %>%
     
 
 ```
+
 
 Sacamos la misma conclusión que de las gráficas, en general la tendencia es hacia arriba excepto en eventos excepcionales como la crisis del 2008 o el covid.
 ```{r}
@@ -1318,7 +1674,7 @@ datatsrenta.spain.arima <- datatsrenta.spain %>%
 Como vemos en la predicción, no se espera que la evolución de la renta sea muy vertical como sucede en otros años.
 ```{r}
 datatsrenta.spain.arima.pred <- datatsrenta.spain.arima %>%
-  forecast(h = 5) 
+  forecast(h = 8) 
 
 datatsrenta.spain.titulo <- "Predicción ARIMA de la evolución de la Renta Neta en España"
 GraficoDinamicoArima95CI(datatsrenta.spain, "Año", "valores", datatsrenta.spain.arima.pred, datatsrenta.spain.titulo)
@@ -1379,7 +1735,7 @@ datatsimp.spain.arima <- datatsimp.spain %>%
 
 ```{r}
 datatsimp.spain.arima.pred <- datatsimp.spain.arima %>%
-  forecast(h = 5) 
+  forecast(h = 8) 
 
 datatsimp.spain.arima.titulo <- "Predicción ARIMA de la evolución de Impuestos sobre Renta y Patrimonio en España"
 
@@ -1402,196 +1758,70 @@ ggplotly(datatsimp.spain.STL.plot)
 ```
 
 
-
-
-Vamos a continuar viendo la evolución y predicción de distintas variables económicas de interés en España.
-
 ```{r}
-datatsahorro.spain <- data %>% 
-  filter(na_item == 'B7N' & geo == 'ES' & unit == 'EUR_HAB' & TIME_PERIOD > 2001) %>% 
-  arrange(TIME_PERIOD, values) %>% 
-  rename(Año = TIME_PERIOD,
-         valores = values) %>% 
-  select(Año, valores) %>% 
-  as_tsibble(index = Año) %>% 
-  fill_gaps()
-```
-
-Su evolución es parecida a la de la renta neta y tiene todo el sentido ya que una mayor renta debería estar directamente relacionada con una mayor capacidad de ahorro.
-```{r}
-datatsahorro.spain.plot <- datatsahorro.spain %>%
-  autoplot(size = 0.7) +
-  theme_bw(base_size = 14) +
-  labs(x = "Año", y = "Ahorro neto en € por habitante",
-       title = "Evolución del Ahorro Neto en España",
-       subtitle = "Valores per cápita")
-
-ggplotly(datatsahorro.spain.plot)
-```
-
-Hagamos una predicción a 5 años con ARIMA.
-
-```{r message=FALSE, warning=FALSE, results = 'hide'}
-datatsahorro.spain.arima <- datatsahorro.spain %>% 
-  model(ARIMA()) %>% 
-  report(fit)
-```
-
-```{r}
-datatsahorro.spain.arima.pred <- datatsahorro.spain.arima %>% 
-  forecast(h = '5 years') 
-
-datatsahorro.spain.arima.titulo <- "Predicción ARIMA del Ahorro Neto en España"
-  
-GraficoDinamicoArima95CI(datatsahorro.spain, "Año", "valores", datatsahorro.spain.arima.pred, datatsahorro.spain.arima.titulo)
-```
-
-```{r}
-ahorro.neto <- datatsahorro.spain$valores
-datatsahorro.spain.STL <- datatsahorro.spain %>% 
-  model(STL(ahorro.neto, robust = TRUE)) %>% 
-  components()
-```
-
-```{r}
-datatsahorro.spain.STL.plot <- datatsahorro.spain.STL %>% 
-  autoplot() +
-  theme_bw(base_size = 14)
-
-ggplotly(datatsahorro.spain.STL.plot)
-```
-
-
-
-Otro factor interesante puede ser, los ingresos que los españoles reciben a partir de la propiedad de activos, ya que España por lo general se considera un país con una pobre educación financiera. Para ello, de nuevo tenemos que normalizar los valores por población
-```{r}
-datatsactivos.spain <- data %>% 
-  filter(na_item == 'D4', geo == 'ES', TIME_PERIOD > 2001, direct == 'RECV', unit == "MIO_EUR") %>% 
-  left_join(poblacion, by = c("TIME_PERIOD", "geo")) %>% 
+data.imp.yeoj <- data %>% 
+  filter(NUTS == 0, na_item %in% c("D5", "B6N", "D61"), unit == 'MIO_EUR', TIME_PERIOD == 2022, direct %in% c("BAL", "PAID")) %>% 
+  left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
   mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
   select(-values) %>% 
-  rename(Año = TIME_PERIOD,
-         valores = per.capita) %>% 
-  arrange(Año, valores) %>% 
-  select(Año, valores) %>% 
-  as_tsibble(index = Año) %>% 
-  fill_gaps()
-```
+  rename(values = per.capita) %>% 
+  select(-direct) %>% 
+  pivot_wider(names_from = na_item, values_from = values) %>% 
+  mutate(total.impuestos = D5 + D61) %>% 
+  select(full_name, geo, TIME_PERIOD, B6N, total.impuestos) %>% 
+  rename(Renta = B6N,
+         Impuestos = total.impuestos,
+         Región = full_name) 
 
-Veamos la evolución
+    lambda <- 1  
+    lambda <- optimize.yeojohnson.R2(data.imp.yeoj$Renta, data.imp.yeoj$Impuestos)  
+    data.imp.yeoj$total.impuestos <- yeo.johnson(data.imp.yeoj$Impuestos,lambda)
+    
+    p <- data.imp.yeoj %>%
+    ggplot(aes(Renta,
+               Impuestos,
+               label = Región)) + 
+    geom_point() +
+    theme(legend.position = "none") +
+    geom_smooth(method = lm, se = FALSE) + 
+      labs(x = "Renta (€/HAB)",
+           y = "Impuestos pagados (€/HAB)") + 
+      theme_bw(base_size = 14) + 
+      labs(title = "Relación entre renta neta e impuestos pagados por países (2022)") + 
+      theme_bw(base_size = 12)
 
-```{r}
-datatsactivos.spain.plot <- datatsactivos.spain %>% 
-  autoplot(size = 0.7) + 
-  theme_bw(base_size = 14) +
-    labs(x = "Año", y = "Ingresos",
-       title = "Evolución de Ingresos a partir de Activos Fijos en España",
-       subtitle = "Valores en € por habitante")
-
-ggplotly(datatsactivos.spain.plot)
-```
-
-```{r message=FALSE, warning=FALSE, results = 'hide'}
-datatsactivos.spain.arima <- datatsactivos.spain %>% 
-  model(ARIMA()) %>% 
-  report(fit)
-```
-
-```{r}
-datatsactivos.spain.arima.pred <- datatsactivos.spain.arima %>% 
-  forecast(h = "5 years") 
-
-datatsactivos.spain.arima.titulo <- "Predicción ARIMA de los Ingresos a partir de Activos Fijos en España"
   
-GraficoDinamicoArima95CI(datatsactivos.spain, "Año", "valores", datatsactivos.spain.arima.pred, datatsactivos.spain.arima.titulo)
-```
-
-```{r}
-ingresos <- datatsactivos.spain$valores
-datatsactivos.spain.STL <- datatsactivos.spain %>% 
-  model(STL(ingresos, robust = TRUE)) %>% 
-  components()
-```
-
-```{r}
-datatsactivos.spain.STL.plot <- datatsactivos.spain.STL %>% 
-  autoplot() +
-  theme_bw(base_size = 14)
-
-ggplotly(datatsactivos.spain.STL.plot)
-```
-
-Ahora, nos centraremos en observar la evolución de España junto con la de otros países,
-para ello esta vez usaremos datos PPS.
-
-```{r}
-datats.evolucion.renta <- data %>% 
-  filter(NUTS == 0 & na_item == 'B6N' & unit == 'PPS_EU27_2020_HAB') %>% 
-  select(full_name, TIME_PERIOD, values) %>% 
-  rename(Paises = full_name,
-         Año = TIME_PERIOD,
-         valores = values) %>% 
-  arrange(Año, valores) %>% 
-  as_tsibble(index = Año, key = Paises) %>% 
-  fill_gaps()
-```
-
-```{r}
-datats.evolucion.renta %>% 
-  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>% 
-  hc_title(text = "Evolución de la Renta Neta por País") %>% 
-  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
-
+  ggplotly(p, tooltip = c("Región", "Renta", "Impuestos"))
 ```
 
 
-Veamos la evolución del ahorro, hay menos países que tienen datos acerca de esto pero podemos hacer una comparativa igualmente.
-
 ```{r}
-datats.evolucion.ahorro <- data %>% 
-  filter(NUTS == 0 & na_item == "B7N" & unit == "PPS_EU27_2020_HAB") %>% 
-  select(full_name, TIME_PERIOD, values) %>% 
-  rename(Paises = full_name,
-         Año = TIME_PERIOD,
-         valores = values) %>%
-  arrange(Año, valores) %>% 
-  as_tsibble(index = Año, key = Paises) %>% 
-  fill_gaps()
-```
 
-```{r}
-datats.evolucion.ahorro %>% 
-  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>% 
-  hc_title(text = "Evolución del Ahorro Neto por País") %>% 
-  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
-```
+mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
+"D61" = "cotizaciones_sociales (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
 
-Por último veremos la evolución del ingreso primario neto.
+indicadores.matriz <- c("B5N", "B6N", "B7N", "D1", "D62", "D5", "D4", "P3", "P51C")
 
-```{r}
-datats.evolucion.ingresoprimario <- data %>% 
-  filter(NUTS == 0 & na_item == "B5N" & unit == "PPS_EU27_2020_HAB") %>% 
-  select(full_name, TIME_PERIOD, values) %>% 
-  rename(Paises = full_name,
-         Año = TIME_PERIOD,
-         valores = values) %>% 
-  arrange(Año, valores) %>% 
-  as_tsibble(index = Año, key = Paises) %>% 
-  fill_gaps()
+data.tb.matrizcorr <- data %>% 
+  filter(NUTS == 0, na_item %in% indicadores.matriz, unit == "MIO_EUR", TIME_PERIOD == 2022) %>% 
+  left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
+    mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>%
+    select(-values) %>%
+    mutate(na_item = dplyr::recode(na_item, !!!mapa_codigos_cortos)) %>%
+    mutate(atrib.comb = paste(na_item, "/", direct)) %>% 
+    rename(values = per.capita) %>% 
+    select(full_name, atrib.comb, values) %>% 
+    pivot_wider(names_from = atrib.comb, values_from = values) %>% 
+    rename(Región = full_name) 
+
+
+data.tb.matrizcorr %>% 
+  select(-Región) %>% 
+  cor(use='complete.obs') %>% 
+  plot_correlation(show_values = TRUE) %>% 
+  layout(title = "Correlación de indicadores por países")
   
 ```
-
-```{r}
-datats.evolucion.ingresoprimario %>% 
-  hchart("line", hcaes(x = Año, y = valores, group = Paises)) %>%
-  hc_title(text = "Evolución del Ingreso Primario Neto por País") %>% 
-  hc_subtitle(text = "Valores tomados en unidades PPS per cápita")
-  
-```
-
-
-
-
 
 
 
