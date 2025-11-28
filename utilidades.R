@@ -5,7 +5,7 @@ MapaCoroplético<- function(geoj,value,region_labels,legend_title){
   pal <- colorQuantile("YlOrRd", value, n = 9)
   p <-  geoj %>%
     leaflet() %>%  
-    setView(lng = 20, lat = 50, zoom = 4)  %>% 
+    setView(lng = 10.7038, lat = 44, zoom = 4)  %>% 
     addProviderTiles(provider = "Esri.WorldImagery") %>% 
     addPolygons(
       fillColor = ~pal(value), 
@@ -41,7 +41,44 @@ MapaCoroplético<- function(geoj,value,region_labels,legend_title){
   return(p)
 }
 
-
+MapaCoropléticoMemoria <- function(geoj,value,region_labels,legend_title){
+  pal <- colorQuantile("YlOrRd", value, n = 9)
+  p <-  geoj %>%
+    leaflet() %>%  
+    setView(lng = 10.7038, lat = 44, zoom = 4) %>% 
+    addPolygons(
+      fillColor = ~pal(value), 
+      weight = 2,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.7,
+      highlightOptions = highlightOptions( 
+        weight = 2,
+        color = rgb(0.2,0.2,0.2),
+        dashArray = "",
+        fillOpacity = 0.7,
+        bringToFront = TRUE
+      ),
+      label = region_labels 
+    ) %>% 
+    addLegend("bottomleft", 
+              pal = pal, 
+              values = value,
+              title = legend_title,
+              labFormat = function(type, cuts, p) {
+                n = length(cuts) 
+                x = (cuts[-n] + cuts[-1])/2
+                x=prettyNum(round(x,
+                                  digits=max(5-nchar(as.character(round(max(na.omit(value))))),0)), 
+                            big.mark = ","
+                )
+                as.character(x)
+              },
+              opacity = 1
+    )
+  return(p)
+}
 
 GraficoDinamicoArima95CI <- function(
     data, # tssible con con los datos originales
