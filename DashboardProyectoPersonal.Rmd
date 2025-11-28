@@ -1,5 +1,5 @@
 ---
-title: "Income of households by NUTS 2"
+title: "Ingresos medios de los hogares por NUTS2"
 author: "Aythami Lorenzo"
 date: "`r Sys.Date()`"
 output: flexdashboard::flex_dashboard
@@ -230,329 +230,258 @@ output$Indicador.paises.dinamico.ui <- shiny::renderUI({
   req(input$Alcance)
   
   if(input$Alcance == "Países") {
-  if(input$Unidad.series == "PPS_EU27_2020_HAB") {
-    opciones <- c(
-      "Todos los indicadores",
-      "Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N")
-  } else {
-    opciones <- c(
-      "Todos los indicadores",
-      "Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N",
-      "Remuneración de los asalariados" = "D1",
-      "Prestaciones sociales recibidas" = "D62",
-      "Impuestos sobre renta y patrimonio" = "D5",
-      "Rentas de la propiedad" = "D4")
+    
+    if(input$Unidad.series == "PPS_EU27_2020_HAB") {
+      opciones <- c("Todos los indicadores", "Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N")
+    } else {
+      opciones <- c("Todos los indicadores",
+                    "Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N",
+                    "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62",
+                    "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4")
+    }
+  } else { 
+    
+    opciones <- c("Todos los indicadores",
+                  "Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N",
+                  "Ahorro neto" = 'B7N', "Remuneración de los asalariados" = "D1",
+                  "Prestaciones sociales recibidas" = "D62", "Impuestos sobre renta y patrimonio" = "D5",
+                  "Rentas de la propiedad" = "D4", "Gasto en consumo final" = "P3",
+                  "Inversión en activos fijos" = "P51C")
   }
+  
+  shiny::selectInput("Indicador.series", label = "Indicador", choices = opciones, selected = "B6N", width = '240px')
+})
+
+```
+
+```{r}
+
+shiny::selectInput(
+  "Alcance", label = "Alcance",
+  choices = c("Países", "Regiones"), # Cambiado a 'Regiones'
+  selected = "Países"
+)
+
+
+shiny::uiOutput("Indicador.paises.dinamico.ui")
+
+
+
+conditionalPanel(
+  condition = "input.Alcance == 'Países'",
+  shiny::selectInput(
+    "Unidad.series", label = "Unidad",
+    choices = c("€ por habitante" = "EUR_HAB", "Unidades PPS" = "PPS_EU27_2020_HAB"),
+    selected = "EUR_HAB", width = '240px'
+  )
+)
+
+
+conditionalPanel(
+  condition = "input.Alcance == 'Países' && input['Indicador.series'] != 'Todos los indicadores'",
+  shiny::selectInput(
+    "Paises.series", label = "Países",
+    choices = unique((data %>% 
+                       filter(NUTS == 0))$full_name),
+    selected = c("Spain", "Portugal", "France"),
+    multiple = TRUE
+  )
+)
+
+
+conditionalPanel(
+  condition = "input.Alcance == 'Países' && input['Indicador.series'] == 'Todos los indicadores'",
+  shiny::selectInput(
+    "Paises.series2", label = "País",
+    choices = unique((data %>% 
+                       filter(NUTS == 0))$full_name),
+    selected = "Spain"
+  )
+)
+
+
+
+
+
+conditionalPanel(
+  condition = "input.Alcance == 'Regiones'",
+  shiny::selectInput(
+    "Pais.Padre",  
+    label = "País:",
+    choices = unique((data %>% 
+                       filter(NUTS == 0))$full_name),
+    selected = "Spain"
+  ),
+  
+  shiny::uiOutput("UI.Selector.Regiones")
+)
+
+
+
+shiny::checkboxInput(
+  "Escala.series", 
+   label = "Escala del eje y libre", 
+   value = FALSE)   
+
+```
+
+```{r}
+
+output$UI.Selector.Regiones <- shiny::renderUI({
+  
+  req(input$Pais.Padre)
+  
+
+  codigo_pais <- data %>% 
+    filter(NUTS == 0, full_name == input$Pais.Padre) %>% 
+    pull(geo) %>% 
+    unique()
+  
+  
+  opciones_regionales <- data %>%
+    filter(NUTS == 2, substr(geo, 1, 2) == codigo_pais) %>%
+    pull(full_name) %>% 
+    unique() %>% 
+    sort()
+  
+
+  if (!is.null(input$Indicador.series) && input$Indicador.series == 'Todos los indicadores') {
+     label_txt <- "Región"
+     sel_default <- opciones_regionales[1]
+       shiny::selectInput(
+    "Regiones.series", 
+    label = label_txt,
+    choices = opciones_regionales,
+    selected = sel_default
+  )
+     
   } else {
-      opciones <- c(
-        "Todos los indicadores",
-      "Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Ahorro neto" = 'B7N',
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4",
-    "Gasto en consumo final" = "P3",
-    "Inversión en activos fijos" = "P51C")
-}
-    shiny::selectInput(
-      "Indicador.series",
-      label = "Indicador",
-      choices = opciones,
-      selected = "B6N",
-      width = '240px' 
-    )
+     label_txt <- "Regiones"
+     sel_default <- opciones_regionales[1:min(4, length(opciones_regionales))] # Selecciona hasta 4 por defecto
+     
+       shiny::selectInput(
+    "Regiones.series", 
+    label = label_txt,
+    choices = opciones_regionales,
+    selected = sel_default,
+    multiple = TRUE
+  )
+  }
+  
 
 })
 ```
 
-```{r}
-    shiny::selectInput(
-      "Alcance",
-      label = "Alcance",
-      choices = c(
-        "Países",
-        "Comunidades España"
-      ),
-      selected = "Países"
-    )
-    
-    shiny::uiOutput("Indicador.paises.dinamico.ui")
-    
-
-  conditionalPanel(
-    condition = "input.Alcance == 'Países' && input['Indicador.series'] != 'Todos los indicadores'",
-    shiny::selectInput(
-      "Unidad.series",
-      label = "Unidad",
-      choices = c(
-        "€ por habitante" = "EUR_HAB",
-        "Unidades PPS por habitante" = "PPS_EU27_2020_HAB"),
-      selected = "EUR_HAB",
-      width = '240px' 
-    )
-  )
-  
-    opciones.series.paises  <- data %>% 
-      filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020')) %>% 
-      mutate(
-    full_name = ifelse(geo == "EU27_2020", "Media UE", full_name)) %>%
-  arrange(full_name)
-    
-      
-  conditionalPanel(
-    condition = "input.Alcance == 'Países' && input['Indicador.series'] != 'Todos los indicadores'", 
-    shiny::selectInput(
-      "Paises.series",
-      label = "Países",
-      choices = unique(opciones.series.paises$full_name),
-      selected = c("Canarias", "Spain", "Media UE", "France", "Portugal", "Germany"),
-      multiple = TRUE
-    )
-  )
-  
-    opciones.series.comunidades  <- data %>% 
-      filter(((NUTS == 2 & substr(geo,1,2) == 'ES') | geo == 'EU27_2020')) %>% 
-            mutate(
-    full_name = ifelse(geo == "EU27_2020", "Media UE", full_name)) %>%
-  arrange(full_name)
-    
-  conditionalPanel(
-    condition = "input.Alcance == 'Comunidades España' && input['Indicador.series'] != 'Todos los indicadores'",
-    shiny::selectInput(
-      "Comunidades.series",
-      label = "Comunidades",
-      choices = unique(opciones.series.comunidades$full_name),
-      selected = c("Canarias", "Andalucía", "Comunidad de Madrid", "Extremadura", "Media UE", "País Vasco"),
-      multiple = TRUE
-    )
-  )
-  
-  
-    conditionalPanel(
-    condition = "input.Alcance == 'Países' && input['Indicador.series'] == 'Todos los indicadores'", 
-    shiny::selectInput(
-      "Paises.series2",
-      label = "País",
-      choices = unique((data %>% filter(NUTS == 0))$full_name),
-      selected = "Spain"
-    )
-  )
-    
-  conditionalPanel(
-    condition = "input.Alcance == 'Comunidades España' && input['Indicador.series'] == 'Todos los indicadores'", 
-    shiny::selectInput(
-      "Comunidades.series2",
-      label = "Comunidad",
-      choices = unique((data %>% filter(NUTS == 2, substr(geo,1,2) == 'ES'))$full_name),
-      selected = "Canarias"
-    )
-  )
-  
-    
-  shiny::checkboxInput(
-    "Escala.series",
-    label = "Escala del eje y libre",
-    value = FALSE
-  )
-```
 
 
 ```{r}
 input.processing.series.temporales <- reactive({
   
-  if(input$Indicador.series == "Todos los indicadores") {
-    
-    unidad = "€/HAB"  
-    
-  } else if(input$Alcance == "Países") {
-    
-  if (input$Unidad.series == 'EUR_HAB') {
-    
-    unidad = "€/HAB"
-    
-  } else {
-    
-    unidad = "PPS/HAB"
-    
-  }
-  } else {
-    
-    unidad = "€/HAB"
-  }  
-  
-  
-  
-  if(input$Indicador.series == "Todos los indicadores") {
-    
-    nombres_legibles <- c(
-    "B5N" = "Ingreso primario neto",
-    "B6N" = "Renta disponible neta",
-    "B7N" = "Ahorro neto",
-    "D1"  = "Remuneración asalariados",
-    "D62" = "Prestaciones sociales recibidas",
-    "D5"  = "Impuestos renta/patrimonio",
-    "D4"  = "Rentas propiedad",
-    "P3"  = "Gasto consumo final",
-    "P51C" = "Inversión activos fijos"
-  )
 
-    todos_codigos.paises <- c("B5N", "B6N", "D1", "D62", "D5", "D4")
-    todos_codigos.comunidades <- c("B5N", "B6N", "B7N", "D1", "D62", "D5", "D4", "P3", "P51C")
+  if (isTRUE(input$Unidad.series == 'EUR_HAB')) unidad_simbolo = "€/HAB" else unidad_simbolo = "PPS/HAB"
+  
+
+  if(input$Indicador.series == "Todos los indicadores") {
+    
+    mapa_codigos_cortos <- c("B5N" = "ingreso_primario (B5N)", "B6N" = "renta_disponible (B6N)", "B7N" = "ahorro_neto (B7N)","D5" = "impuestos_s_r_p (D5)", "D1" = "remuneracion_asalariados (D1)", "D62" = "prestaciones_sociales_recv (D62)","D4" = "rentas_prop (D4)", "P3" = "gasto_final (P3)", "P51C" = "inversion_fija (P51C)",
+"D61" = "cotizaciones_soc_paid (D61)", "D63" = "transfer_sociales (D63)", "B2A3N" = "exc_bruto_exp_rent (B2A3N)", "D7" = "otras_transferencias (D7)")
+    
+    if(input$Unidad.series == "EUR_HAB") {
+      unit.series = "MIO_EUR"
+    } else {
+      
+      unit.series = "PPS_EU27_2020_HAB"
+    }
+    
+    
+    codigos_regiones <- c("B5N", "B6N", "B7N", "D1", "D62", "D5", "D4", "P3", "P51C", "D61", "B2A3N")
     
     if(input$Alcance == "Países") {
-      
+      req(input$Paises.series2)
       tb <- data %>% 
-        filter(NUTS == 0, full_name == input$Paises.series2[1], na_item %in% todos_codigos.paises, unit == "MIO_EUR", (!na_item %in% c("D4", "D62") | direct == "RECV")) %>% 
-        rename(Región = full_name,
-               valores = values) %>% 
+        filter(NUTS == 0, full_name == input$Paises.series2[1], na_item %in% codigos_regiones, unit == unit.series) %>% 
+        filter(!(na_item %in% c("D4", "D62")) | direct == "RECV") %>% 
+        filter(!(na_item == "D61") | direct == "PAID") %>% 
         left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
-        mutate(per.capita = (valores * 1000000) / (poblacion * 1000)) %>% 
-        select(-valores) %>% 
-        rename(valores = per.capita)
+        mutate(valores = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% rename(Región = full_name)
       
-          tb <- tb %>% mutate(na_item = dplyr::recode(na_item, !!!nombres_legibles))
-      
-          text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-          
-          return(list(tb, text))
-      
-    } else if(input$Alcance == "Comunidades España") {
-      
-           tb <- data %>% 
-        filter(NUTS == 2, full_name == input$Comunidades.series2[1], na_item %in% todos_codigos.comunidades, unit == "MIO_EUR", (!na_item %in% c("D4", "D62") | direct == "RECV")) %>% 
-        rename(Región = full_name,
-               valores = values) %>% 
+    } else { 
+      req(input$Regiones.series)
+      tb <- data %>% 
+        filter(NUTS == 2, full_name == input$Regiones.series[1], na_item %in% codigos_regiones, unit == unit.series) %>% 
+        filter(!(na_item %in% c("D4", "D62")) | direct == "RECV") %>% 
+        filter(!(na_item == "D61") | direct == "PAID") %>%
         left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
-        mutate(per.capita = (valores * 1000000) / (poblacion * 1000)) %>% 
-        select(-valores) %>% 
-        rename(valores = per.capita)
-      
-          tb <- tb %>% mutate(na_item = dplyr::recode(na_item, !!!nombres_legibles))
-          
-          text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-          
-          return(list(tb, text))
-      
-    }  
+        mutate(valores = (values * 1000000) / (poblacion * 1000)) %>% 
+        select(-values) %>% rename(Región = full_name)
+    }
     
+    
+    tb <- tb %>% mutate(text = paste("Año: ", TIME_PERIOD, "<br>Indicador: ", na_item, "<br>Valor: ", round(valores, 1), unidad_simbolo)) %>% 
+      mutate(na_item = dplyr::recode(na_item, !!!mapa_codigos_cortos)) 
+    
+    return(list(tb, tb$text))
   }
   
   
   
   if(input$Alcance == "Países") {
-    if(input$Indicador.series %in%  c("B5N", "B6N")) {
-      
-      tb <- data %>% 
-        filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020'), na_item == input$Indicador.series, unit == input$Unidad.series & full_name %in% input$Paises.series) %>% 
-        rename(Región = full_name,
-               valores = values) %>% 
-        mutate(
-    grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
-    Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE") 
-  )
-      
-      text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-      
-    } else if(input$Indicador.series %in% c("D4", "D62")) {
-      tb <- data %>% 
-        filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020'), na_item == input$Indicador.series, unit == "MIO_EUR" &  full_name %in% input$Paises.series, direct == "RECV") %>% 
-        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-        select(-values) %>% 
-        rename(Región = full_name,
-               valores = per.capita) %>% 
-        mutate(
-    grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
-    Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE") 
-  )
-      
-          text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-      
+  
+  
+    
+     unidad_filtro <- input$Unidad.series
+     if(input$Indicador.series %in% c("B5N", "B6N")) {
+        tb <- data %>% filter(NUTS==0, na_item==input$Indicador.series, unit==unidad_filtro, full_name %in% input$Paises.series) %>% rename(valores=values)
+     } else {
+        
+        tb <- data %>% filter(NUTS==0, na_item==input$Indicador.series, unit=="MIO_EUR", full_name %in% input$Paises.series) 
+        if(input$Indicador.series %in% c("D4", "D62")) tb <- tb %>% filter(direct=="RECV")
+        tb <- tb %>% left_join(poblacion, by=c("geo","TIME_PERIOD")) %>% mutate(valores=(values*1000000)/(poblacion*1000))
+     }
+     
+     
+     tb <- tb %>% rename(Región = full_name) %>% 
+       mutate(
+         grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
+         Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE"),
+         text = paste("Año: ", TIME_PERIOD, "<br>Valores: ", round(valores, 1), unidad_simbolo)
+       )
+
+  } else { 
+    
+    req(input$Regiones.series)
+    
+    
+    if(input$Indicador.series %in% c("B5N", "B6N", "B7N")) {
+      tb <- data %>% filter(NUTS==2, na_item==input$Indicador.series, unit=="EUR_HAB", full_name %in% input$Regiones.series) %>% rename(valores=values)
     } else {
-      
-      tb <- data %>% 
-        filter((NUTS == 0 | full_name == 'Canarias' | NUTS == 'EU27_2020'), na_item == input$Indicador.series, unit == "MIO_EUR" & full_name %in% input$Paises.series) %>% 
-        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-        select(-values) %>% 
-        rename(Región = full_name,
-               valores = per.capita) %>% 
-        mutate(
-    grupo_color = ifelse(Región %in% c("Canarias", "Spain", "Media UE"), "Destacado", "Otras Regiones"),
-    Región = forcats::fct_relevel(Región, "Canarias", "Spain", "Media UE") 
-  )
-      
-          text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-      
+      tb <- data %>% filter(NUTS==2, na_item==input$Indicador.series, unit=="MIO_EUR", full_name %in% input$Regiones.series)
+      if(input$Indicador.series %in% c("D4", "D62")) tb <- tb %>% filter(direct=="RECV")
+      tb <- tb %>% left_join(poblacion, by=c("geo","TIME_PERIOD")) %>% mutate(valores=(values*1000000)/(poblacion*1000))
     }
-  } else if(input$Indicador.series %in%  c("B5N", "B6N", "B7N")) {
-      
-      tb <- data %>% 
-        filter((NUTS == 2 | geo == 'EU27_2020'), na_item == input$Indicador.series, unit == "EUR_HAB" & full_name %in% input$Comunidades.series) %>% 
-        rename(Región = full_name,
-               valores = values) %>% 
-        mutate(
-    grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
-    Región = forcats::fct_relevel(Región, "Canarias", "Media UE") 
-  )
-      
-      
-            text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-      
-  } else if(input$Indicador.series %in% c("D4", "D62")) {
-      tb <- data %>% 
-        filter((NUTS == 2 | geo == 'EU27_2020'), na_item == input$Indicador.series, unit == "MIO_EUR" & direct == "RECV" & full_name %in% input$Comunidades.series) %>% 
-        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-        select(-values) %>% 
-        rename(Región = full_name,
-               valores = per.capita) %>% 
-        mutate(
-    grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
-    Región = forcats::fct_relevel(Región, "Canarias", "Media UE") 
-  )
-      
-      
-            text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
-      
-  } else {
     
-          tb <- data %>% 
-        filter((NUTS == 2 | geo == 'EU27_2020'), na_item == input$Indicador.series & full_name %in% input$Comunidades.series) %>% 
-        left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-        select(-values) %>% 
-        rename(Región = full_name,
-               valores = per.capita) %>% 
-              mutate(
-    grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
-    Región = forcats::fct_relevel(Región, "Canarias", "Media UE") 
-  )
-          
-                text = paste("Año: ", tb$TIME_PERIOD,
-                   "<br>valores: ", round(tb$valores,1), unidad)
     
+    tb <- tb %>% rename(Región = full_name) %>% 
+       mutate(
+         grupo_color = ifelse(Región %in% c("Canarias", "Media UE"), "Destacado", "Otras Regiones"),
+         Región = forcats::fct_relevel(Región, "Canarias", "Media UE"),
+         text = paste("Año: ", TIME_PERIOD, "<br>Valores: ", round(valores, 1), "€/HAB")
+       )
   }
   
-  return(list(tb, text))
-
+  return(list(tb, tb$text))
 })
+
 ```
 
 
 ```{r}
 renderTable({
+  
+  req(nrow(input.processing.series.temporales()[[1]]) > 0)
+  
+  
   
   tb <- input.processing.series.temporales()[[1]]
   
@@ -579,6 +508,10 @@ Column
 ```{r}
 renderPlotly({
   
+  req(input.processing.series.temporales()[[1]])
+  req(input.processing.series.temporales()[[2]])
+
+  
   tb <- input.processing.series.temporales()[[1]]
   text <- input.processing.series.temporales()[[2]]
   
@@ -589,6 +522,13 @@ renderPlotly({
     escala = "fixed"
   }
   
+  if(input$Alcance == "Regiones") {
+    nombre.eje = "€/HAB"
+  } else {
+    
+    nombre.eje = ""
+  }
+
   if(input$Indicador.series != "Todos los indicadores") {
   p <- tb %>%
     ggplot(aes(x = TIME_PERIOD,
@@ -604,7 +544,7 @@ renderPlotly({
     facet_wrap(~ Región,
                labeller = labeller(full_name = label_wrap_gen(width = 15)), scales = escala) +
     theme_minimal() + 
-    labs(x = "Año", y = "") + 
+    labs(x = "Año", y = nombre.eje) + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     theme(panel.spacing.x = unit(1, "lines")) +
     theme(legend.position = "none") +
@@ -620,7 +560,7 @@ renderPlotly({
     geom_line(linewidth = 0.8) + 
     facet_wrap(~ na_item, scales = escala) +
     theme_minimal() + 
-    labs(title = paste("Indicadores para", unique(tb$Región), "(€/HAB)"), x = "Año", y = "") + 
+    labs(title = paste("Indicadores para", unique(tb$Región), "(€/HAB)"), x = "Año", y = nombre.eje) + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     theme(panel.spacing.x = unit(1, "lines")) +
     theme(legend.position = "none") +
@@ -904,156 +844,127 @@ Column {.sidebar data-width=250}
 
 ```{r inicio_comparacion}
 
-
+# 1. SELECTOR ALCANCE
 shiny::selectInput(
   "Alcance.comparacion",
   label = "Alcance",
-  choices = c("Países", "Comunidades España"),
+  choices = c("Países", "Regiones"), # <--- CAMBIO: 'Comunidades España' -> 'Regiones'
   selected = "Países"
 )
 
-
+# 2. INPUTS X e Y (DINÁMICOS - Se mantienen igual)
 shiny::uiOutput("Indicadores.comparacion.ui.x")
 
-selectInput(
+shiny::selectInput(
   "x_scale", 
   label = "Transformación del atributo x",
-  choices = c("none",
-              "sqrt",    
-              "log"
-             ), 
+  choices = c("none", "sqrt", "log"), 
   selected = "none"
 )
 
 shiny::uiOutput("Indicadores.comparacion.ui.y")
 
-
-selectInput(
+shiny::selectInput(
   "y_scale", 
   label = "Transformación del atributo y",
-  choices = c("none",
-              "log",
-              "YeoJohnson"
-             ), 
+  choices = c("none", "log", "YeoJohnson"), 
   selected = "none"
 )
+
+# Lógica de opciones para X e Y (Adaptada a 'Regiones')
 output$Indicadores.comparacion.ui.x <- shiny::renderUI({
-  
   req(input$Alcance.comparacion)
-  
   if (input$Alcance.comparacion == "Países") {
-    
-    opciones <- c(
-      "Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N",
-      "Remuneración de los asalariados" = "D1",
-      "Prestaciones sociales recibidas" = "D62",
-      "Impuestos sobre renta y patrimonio" = "D5",
-      "Rentas de la propiedad" = "D4"
-    )
-  } else {
-
-    opciones <- c(
-      "Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Ahorro neto" = 'B7N',
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4",
-    "Gasto en consumo final" = "P3",
-    "Inversión en activos fijos" = "P51C"
-    )
+    opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N", "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62", "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4")
+  } else { # Regiones
+    opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N", "Ahorro neto" = 'B7N', "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62", "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4", "Gasto en consumo final" = "P3", "Inversión en activos fijos" = "P51C")
   }
-  
-   
-      shiny::selectInput(
-        "X", 
-        label = "x: Atributo 1",
-        choices = opciones,
-        selected = "B6N"
-      )
-    
-  
+  shiny::selectInput("X", label = "x: Atributo 1", choices = opciones, selected = "B6N")
 })
-
 
 output$Indicadores.comparacion.ui.y <- shiny::renderUI({
-  
   req(input$Alcance.comparacion)
-  
   if (input$Alcance.comparacion == "Países") {
-    
-    opciones <- c(
-      "Ingreso primario neto" = "B5N",
-      "Renta disponible neta" = "B6N",
-      "Remuneración de los asalariados" = "D1",
-      "Prestaciones sociales recibidas" = "D62",
-      "Impuestos sobre renta y patrimonio" = "D5",
-      "Rentas de la propiedad" = "D4"
-    )
-  } else {
-
-    opciones <- c(
-      "Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Ahorro neto" = 'B7N',
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4",
-    "Gasto en consumo final" = "P3",
-    "Inversión en activos fijos" = "P51C"
-    )
+    opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N", "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62", "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4")
+  } else { # Regiones
+    opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N", "Ahorro neto" = 'B7N', "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62", "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4", "Gasto en consumo final" = "P3", "Inversión en activos fijos" = "P51C")
   }
-  
-   
-      shiny::selectInput(
-        "Y", 
-        label = "y: Atributo 2",
-        choices = opciones,
-        selected = "B5N"
-      )
-    
-  
+  shiny::selectInput("Y", label = "y: Atributo 2", choices = opciones, selected = "B5N")
 })
 
 
+# 3. SELECTOR AÑO
 shiny::selectInput(
   "Año.comparacion",
-  label = "Año",
-  choices = c("Todos",sort(unique(data$TIME_PERIOD), decreasing = TRUE)),
-  selected = "Todos"
+  label = "Año Inicial",
+  choices = 2000:2021,
+  selected = 2000
 )
 
-lista_paises <- data %>% 
-  filter(NUTS == 0) 
-   
 
+# --- 4. LÓGICA DE SELECCIÓN DE TERRITORIO (REESTRUCTURADA) ---
 
+# CASO PAÍSES: Solo seleccionamos el país objetivo
 conditionalPanel(
   condition = "input['Alcance.comparacion'] == 'Países'",
-    shiny::selectInput(
-  "Pais.comparacion",
-  label = "País",
-  choices = unique(lista_paises$full_name),
-  selected = "Spain"
+  shiny::selectInput(
+    "Pais.comparacion",
+    label = "País",
+    choices = unique((data %>% filter(NUTS == 0))$full_name),
+    selected = "Spain"
   )
 )
 
-lista_comunidades <- data %>% 
-  filter(NUTS == 2 & substr(geo,1,2) == 'ES') 
 
 conditionalPanel(
-  condition = "input['Alcance.comparacion'] == 'Comunidades España'",
+  condition = "input['Alcance.comparacion'] == 'Regiones'",
+  
+
+  shiny::selectInput(
+    "Pais.Padre.Comp", 
+    label = "País:",
+    choices = unique((data %>% filter(NUTS == 0))$full_name),
+    selected = "Spain"
+  ),
+  
+  
+  shiny::uiOutput("UI.Region.Comparacion")
+)
+
+
+output$UI.Region.Comparacion <- shiny::renderUI({
+  req(input$Pais.Padre.Comp)
+  
+  # 1. Obtener código del país seleccionado (ej: Spain -> ES)
+  # Usamos dplyr para asegurar que sacamos un solo valor limpio
+  codigo_pais_df <- data %>% 
+    filter(NUTS == 0, full_name == input$Pais.Padre.Comp) %>% 
+    select(geo) %>% 
+    distinct() %>% 
+    slice(1)
+    
+  codigo_pais <- codigo_pais_df$geo
+  
+  if(length(codigo_pais) == 0) return(NULL)
+  
+  # 2. Filtrar regiones NUTS 2 que empiecen por ese código (usando regex ^ES)
+  opciones_regionales <- data %>%
+    filter(NUTS == 2, grepl(paste0("^", codigo_pais), geo)) %>%
+    pull(full_name) %>% 
+    unique() %>% 
+    sort()
+    
+  # Selección inteligente por defecto
+  sel_def <- if(input$Pais.Padre.Comp == "Spain") "Canarias" else opciones_regionales[1]
   
   shiny::selectInput(
-    "Comunidad.comparacion",
+    "Comunidad.comparacion", # Mantenemos tu ID original para compatibilidad
     label = "Región",
-    choices = unique(lista_comunidades$full_name),
-    selected = "Canarias"
+    choices = opciones_regionales,
+    selected = sel_def
   )
-)
+})
+
 
 ```
 
@@ -1061,72 +972,92 @@ conditionalPanel(
 ```{r}
 input.processing.comparacion <- reactive({
   
+  # Barrera de seguridad: Esperar a que los inputs existan
+  req(input$X, input$Y, input$Alcance.comparacion)
   
-  data %>% 
-    filter(NUTS == 0, full_name == 'Spain', na_item  %in% c("B6N","D4"), unit == "MIO_EUR", (!na_item %in% c("D4", "D62") | direct == "RECV")) %>% 
-    left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
-      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-      select(-values) %>% 
-      rename(values = per.capita) %>% 
-      select(-direct) %>% 
-    pivot_wider(names_from = na_item, values_from = values) %>% 
-    select(Región = full_name, Año = TIME_PERIOD, x = B6N, y = D4) %>% 
-      na.omit()
-      
+  indicador_x <- input$X
+  indicador_y <- input$Y
   
+  # --- LÓGICA DE FILTRADO Y PIVOTE ---
   
   if(input$Alcance.comparacion == "Países") {
     
-    tb <- data %>% 
-      filter(NUTS == 0, full_name == input$Pais.comparacion, na_item %in% c(input$X, input$Y), unit == "MIO_EUR", (!na_item %in% c("D4", "D62") | direct == "RECV")) %>%
-      left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
-      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-      select(-values) %>% 
-      rename(values = per.capita) %>% 
-      select(-direct) %>% 
-      pivot_wider(names_from = na_item, values_from = values) %>% 
-      select(Región = full_name, Año = TIME_PERIOD, x = input$X, y = input$Y) %>% 
-      na.omit()
-    
-  } else {
+    req(input$Pais.comparacion)
     
     tb <- data %>% 
-      filter(NUTS == 2, full_name == input$Comunidad.comparacion, na_item %in% c(input$X, input$Y), unit == 'MIO_EUR', (!na_item %in% c("D4", "D62") | direct == "RECV")) %>%
+      filter(
+        NUTS == 0, 
+        full_name == input$Pais.comparacion, 
+        na_item %in% c(indicador_x, indicador_y), 
+        unit == "MIO_EUR"
+      ) %>%
+      filter(!(na_item %in% c("D4", "D62")) | direct == "RECV") %>% # Filtro duplicados (RECV)
+      
       left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
       mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-      select(-values) %>% 
-      rename(values = per.capita) %>% 
-      select(-direct) %>% 
+      select(-values) %>% rename(values = per.capita) %>% 
+      
+      # Pivote
+      select(full_name, TIME_PERIOD, na_item, values) %>% # Limpieza previa clave
       pivot_wider(names_from = na_item, values_from = values) %>% 
-      select(Región = full_name, Año = TIME_PERIOD, x = input$X, y = input$Y) %>% 
+      
+      # Selección final de columnas X e Y
+      select(Región = full_name, Año = TIME_PERIOD, x = !!sym(indicador_x), y = !!sym(indicador_y)) %>% 
       na.omit()
+      
+  } else { # Alcance == "Regiones"
     
+    req(input$Comunidad.comparacion) # Esperamos al input dinámico de región única
+    
+    tb <- data %>% 
+      filter(
+        NUTS == 2, 
+        full_name == input$Comunidad.comparacion, 
+        na_item %in% c(indicador_x, indicador_y), 
+        unit == 'MIO_EUR'
+      ) %>%
+      filter(!(na_item %in% c("D4", "D62")) | direct == "RECV") %>% 
+      
+      left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>%
+      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+      select(-values) %>% rename(values = per.capita) %>% 
+      
+      # Pivote
+      select(full_name, TIME_PERIOD, na_item, values) %>% 
+      pivot_wider(names_from = na_item, values_from = values) %>% 
+      
+      # Selección final
+      select(Región = full_name, Año = TIME_PERIOD, x = !!sym(indicador_x), y = !!sym(indicador_y)) %>% 
+      na.omit()
   }
   
-    if(input$Año.comparacion != 'Todos'){
-    tb <- tb %>%
-      filter(Año == input$Año.comparacion)
-    } 
   
   
-    # transformados los indicadores de acuerdo con los parámetros de la transformación
+    tb <- tb %>% filter(Año >= input$Año.comparacion)
+   
+  
+  
   if(input$x_scale=="sqrt") tb$x <- sign(tb$x)*sqrt(abs(tb$x))
   if(input$x_scale=="log") tb$x <-  sign(tb$x)*log(abs(tb$x))
   if(input$y_scale=="log") tb$y <-  sign(tb$y)*log(abs(tb$y))
+  
   lambda <- 1  
   if(input$y_scale=="YeoJohnson"){
-    lambda <- optimize.yeojohnson.R2(tb$x, tb$y) # Cálculo óptimo modelo Yeo-Jonhson 
-    tb$y <- yeo.johnson(tb$y,lambda)
+  
+    try({
+      lambda <- optimize.yeojohnson.R2(tb$x, tb$y) 
+      tb$y <- yeo.johnson(tb$y,lambda)
+    }, silent = TRUE)
   }
   
-  tb <- tb %>% 
-    na.omit()
-  # Cálculo regresión lineal después de transformar las variables. 
-  fit <- lm(y ~ x,data=tb)
   
-  # devolvemos una lista con todo lo calculado 
-  return(list(tb,fit,lambda))
+  tb <- tb %>% na.omit()
   
+  
+  
+  fit <- lm(y ~ x, data=tb)
+  
+  return(list(tb, fit, lambda))
 })
 ```
 
@@ -1178,10 +1109,9 @@ renderPlotly({
                y)) + 
     geom_point() +
     theme(legend.position = "none") +
-    labs(x= input$x, y= input$y) +
     geom_smooth(method = lm, se = FALSE) + 
-      labs(x = "€/HAB",
-           y = "€/HAB")
+      labs(x = "(€/HAB)",
+           y = "(€/HAB)")
 })
 ```
 
@@ -1196,8 +1126,8 @@ renderTable({
   
   # imprimimos la tabla 
   tb %>% 
-  arrange(desc(x)) %>% 
-  mutate(Año = input$Año.comparacion) %>% 
+  arrange(desc(Año)) %>% 
+  mutate(Año = as.character(Año)) %>% 
   mutate(x=prettyNum(round(x,digits=2), big.mark = ",")) %>% 
   mutate(y=prettyNum(round(y,digits=2), big.mark = ","))
   
@@ -1213,109 +1143,116 @@ Column {.sidebar data-width=290}
 
 ```{r}
 
+
+
 shiny::selectInput(
- "Scope",
- label = "Alcance del Análisis:",
- choices = c("Países", "Comunidades España"),
- selected = "Países"
+  "Scope",
+  label = "Alcance del Análisis:",
+  choices = c("Países", "Regiones"), 
+  selected = "Países"
 )
 
 
 output$Indicador.arima.dinamico <- shiny::renderUI({
   
   if(input$Scope == "Países") {
-    # Lógica para PAÍSES (Depende de input$Unidad.arima)
     if(input$Unidad.arima == "EUR_HAB") {
-      opciones <- c("Ingreso primario neto" = "B5N",
-        "Renta disponible neta" = "B6N",
-        "Remuneración de los asalariados" = "D1",
-        "Prestaciones sociales recibidas" = "D62",
-        "Impuestos sobre renta y patrimonio" = "D5",
-        "Rentas de la propiedad" = "D4")
+      opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N",
+                    "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62",
+                    "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4")
     } else {
-      opciones <- c("Ingreso primario neto" = "B5N",
-        "Renta disponible neta" = "B6N")
+      opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N")
     }
     
   } else {
-    # Lógica para Comunidades ESPAÑA (Unidad Fija: EUR_HAB)
-    
-    opciones <- c("Ingreso primario neto" = "B5N",
-    "Renta disponible neta" = "B6N",
-    "Ahorro neto" = 'B7N',
-    "Remuneración de los asalariados" = "D1",
-    "Prestaciones sociales recibidas" = "D62",
-    "Impuestos sobre renta y patrimonio" = "D5",
-    "Rentas de la propiedad" = "D4",
-    "Gasto en consumo final" = "P3",
-    "Inversión en activos fijos" = "P51C")
+    opciones <- c("Ingreso primario neto" = "B5N", "Renta disponible neta" = "B6N", "Ahorro neto" = 'B7N',
+                  "Remuneración de los asalariados" = "D1", "Prestaciones sociales recibidas" = "D62",
+                  "Impuestos sobre renta y patrimonio" = "D5", "Rentas de la propiedad" = "D4",
+                  "Gasto en consumo final" = "P3", "Inversión en activos fijos" = "P51C")
   }
   
-  shiny::selectInput(
-    "Indicador.arima",
-    label = "Indicador",
-    choices = opciones,
-    selected = "B6N"
-  )
+  shiny::selectInput("Indicador.arima", label = "Indicador", choices = opciones, selected = "B6N")
 })
 
 shiny::uiOutput("Indicador.arima.dinamico")
 
-opciones <- data %>% 
-  filter(NUTS == 0)
+
+
 
 conditionalPanel(
   condition = "input.Scope == 'Países'",
-shiny::selectInput(
-  "Pais",
-  label = "Países (máx 2)",
-  choices = unique(opciones$full_name),
-  selected = c("Spain", "Portugal"),
-  multiple = TRUE
-  )
-)
+  
 
-conditionalPanel(
-  condition = "input.Scope == 'Países'",
-shiny::selectInput(
-  "Unidad.arima",
-  label = "Unidad",
-  choices = c(
-    "€ por habitante" = 'EUR_HAB',
-    "Unidades PPS por habitante" = 'PPS_EU27_2020_HAB'),
-  selected = "EUR_HAB"
-  )
-)
-
-opciones_prov_full <- data %>%
- filter(substr(geo, 1, 2) == 'ES' & NUTS == 2) # Usamos las NUTS 2 de España
-
-conditionalPanel(
-  condition = "input.Scope == 'Comunidades España'",
   shiny::selectInput(
- "Comunidad", 
- label = "Comunidades (múltiples)",
- choices = unique(opciones_prov_full$full_name), 
- selected = c("Canarias", "Andalucía"),
- multiple = TRUE
+    "Pais", 
+    label = "Países (Máx 2)",
+    choices = unique((data %>% filter(NUTS == 0))$full_name),
+    selected = c("Spain", "France"),
+    multiple = TRUE 
+  ),
+  
+  
+  shiny::selectInput(
+    "Unidad.arima",
+    label = "Unidad",
+    choices = c("€ por habitante" = 'EUR_HAB', "Unidades PPS" = 'PPS_EU27_2020_HAB'),
+    selected = "EUR_HAB"
   )
 )
+
+
+conditionalPanel(
+  condition = "input.Scope == 'Regiones'",
+  
+
+  shiny::selectInput(
+    "Pais.Padre.Arima", 
+    label = "País:",
+    choices = unique((data %>% filter(NUTS == 0))$full_name),
+    selected = "Spain"
+  ),
+  
+  
+  shiny::uiOutput("UI.Regiones.Arima")
+)
+
+
+output$UI.Regiones.Arima <- shiny::renderUI({
+  req(input$Pais.Padre.Arima)
+  
+
+  codigo_pais <- data %>% 
+    filter(NUTS == 0, full_name == input$Pais.Padre.Arima) %>% 
+    pull(geo) %>% unique()
+  
+
+  opciones <- data %>%
+    filter(NUTS == 2, substr(geo, 1, 2) == codigo_pais) %>%
+    pull(full_name) %>% unique() %>% sort()
+    
+
+  sel_def <- if(input$Pais.Padre.Arima == "Spain") c("Canarias", "Andalucía") else opciones[1]
+  
+  shiny::selectInput(
+    "Regiones.Arima", 
+    label = "Regiones (Máx. 2)",
+    choices = opciones,
+    selected = sel_def,
+    multiple = TRUE # 
+  )
+})
+
+
+
 
 shiny::selectInput(
   "AñoInicialArima", 
-  label = "Año Inicial para cálculo ARIMA",
-  choices = unique(data$TIME_PERIOD) , 
+  label = "Año Inicial",
+  choices = sort(unique((data %>% filter(TIME_PERIOD < 2022))$TIME_PERIOD), decreasing = TRUE), 
   selected = first(data$TIME_PERIOD)
 )
 
-numericInput(
-  "Number.forecast.periods",
-  label = "N. Periodos Predicción:",
-  value=5,
-  min=2,
-  max=30,
-  step=1
-)
+numericInput("Number.forecast.periods", label = "N. Periodos Predicción:", value=5, min=2, max=30, step=1)
 
 selectInput(
   "ArimaParameters", 
@@ -1327,87 +1264,83 @@ selectInput(
 ```
 
 ```{r}
+
 input.processing.arima <- reactive({
   
-  if (input$Scope == 'Países') {
-  if(input$Indicador.arima %in% c('B5N', 'B6N')) {
-      
-    tb <- data %>% 
-    filter(na_item == input$Indicador.arima & unit == input$Unidad.arima & NUTS == 0) %>%
-    rename(Región = full_name,
-           Año = TIME_PERIOD,
-           valores = values) %>%
-    filter(Región %in% input$Pais[1:2]) 
-    
-  } else if(input$Indicador.arima %in% c('D4', 'D62')) {
-    
-        tb <- data %>% 
-    filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0 & direct == 'RECV') %>%
-    left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-          mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-          select(-values) %>% 
-    rename(Región = full_name,
-           Año = TIME_PERIOD,
-           valores = per.capita) %>%
-    filter(Región %in% input$Pais[1:2]) 
-         
-        
+  
+  req(input$Scope, input$Indicador.arima)
+  
+
+  if(input$Scope == 'Países') {
+     unidad_filtro <- input$Unidad.arima
   } else {
-    
-            tb <- data %>% 
-    filter(na_item == input$Indicador.arima & unit == 'MIO_EUR' & NUTS == 0) %>%
-    left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
-          mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-          select(-values) %>% 
-    rename(Región = full_name,
-           Año = TIME_PERIOD,
-           valores = per.capita) %>%
-    filter(Región %in% input$Pais[1:2]) 
-             
+     unidad_filtro <- 'EUR_HAB' 
   }
   
-  } else if(input$Indicador.arima %in% c('B5N', 'B6N', 'B7N')) {
-      
-      tb <- data %>% 
-        filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'EUR_HAB') %>% 
-        rename(Región = full_name,
-               Año = TIME_PERIOD,
-               valores = values) %>% 
-        filter(Región %in% input$Comunidad[1:2])
-    } else if(input$Indicador.arima %in% c('D4', 'D62')) {
-      
-      tb <- data %>% 
-        filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'MIO_EUR' & direct == 'RECV') %>%
-        left_join(poblacion, by = c("TIME_PERIOD", "geo")) %>% 
-        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-        select(-values) %>% 
-        rename(Región = full_name,
-               Año = TIME_PERIOD,
-               valores = per.capita) %>% 
-        filter(Región %in% input$Comunidad[1:2])
+
+  if(input$Indicador.arima %in% c('B5N', 'B6N', 'B7N')) {
     
+    if(input$Scope == 'Países') {
+       req(input$Pais) 
+       tb <- data %>% 
+         filter(NUTS == 0, na_item == input$Indicador.arima, unit == unidad_filtro) %>% 
+         filter(full_name %in% input$Pais[1:2]) 
     } else {
-      
-      tb <- data %>% 
-        filter(substr(geo,1,2) == 'ES' & NUTS == 2 & na_item == input$Indicador.arima & unit == 'MIO_EUR') %>%
-        left_join(poblacion, by = c("TIME_PERIOD", "geo")) %>% 
-        mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
-        select(-values) %>% 
-        rename(Región = full_name,
-               Año = TIME_PERIOD,
-               valores = per.capita) %>% 
-        filter(Región %in% input$Comunidad[1:2])
-      
+       req(input$Regiones.Arima) 
+       tb <- data %>% 
+         filter(NUTS == 2, na_item == input$Indicador.arima, unit == 'EUR_HAB') %>% 
+         filter(full_name %in% input$Regiones.Arima[1:2]) 
     }
+    
+    tb <- tb %>% rename(Región = full_name, Año = TIME_PERIOD, valores = values)
+    
   
+  } else if(input$Indicador.arima %in% c('D4', 'D62')) {
+    
+    if(input$Scope == 'Países') {
+       req(input$Pais)
+       tb <- data %>% filter(NUTS == 0, na_item == input$Indicador.arima, unit == 'MIO_EUR', direct == 'RECV', full_name %in% input$Pais[1:2])
+    } else {
+       req(input$Regiones.Arima)
+       tb <- data %>% filter(NUTS == 2, na_item == input$Indicador.arima, unit == 'MIO_EUR', direct == 'RECV', full_name %in% input$Regiones.Arima[1:2])
+    }
+    
+    tb <- tb %>% 
+      left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+      select(-values) %>% 
+      rename(Región = full_name, Año = TIME_PERIOD, valores = per.capita)
+      
+  # CASO 3: Resto de Indicadores MIO_EUR (Normalización Estándar)
+  } else {
+    
+    if(input$Scope == 'Países') {
+       req(input$Pais)
+       tb <- data %>% filter(NUTS == 0, na_item == input$Indicador.arima, unit == 'MIO_EUR', full_name %in% input$Pais[1:2])
+    } else {
+       req(input$Regiones.Arima)
+       tb <- data %>% filter(NUTS == 2, na_item == input$Indicador.arima, unit == 'MIO_EUR', full_name %in% input$Regiones.Arima[1:2])
+    }
+    
+    tb <- tb %>% 
+      left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
+      mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
+      select(-values) %>% 
+      rename(Región = full_name, Año = TIME_PERIOD, valores = per.capita)
+  }
   
   return(tb)
 })
+
+
 ```
 
 
 ```{r}
 shiny::renderTable({
+  
+  req(input.processing.arima())
+  
   tb <- input.processing.arima()
   
    tb %>% 
@@ -1429,6 +1362,8 @@ Column
 renderPlotly({
   
   req(data)
+  req(input.processing.arima())
+  
   tb <- input.processing.arima()
   if(input$Scope == "Países") {
     
@@ -1445,12 +1380,12 @@ renderPlotly({
     
     ts <- tb %>% 
     select(Año, Región, valores) %>% 
-    filter(Región %in% input$Comunidad[1]) %>% 
+    filter(Región %in% input$Regiones.Arima[1]) %>% 
     mutate(Año = as.numeric(Año)) %>% 
     as_tsibble(index = Año, key = Región) %>% 
     fill_gaps()
     
-  titulo <- paste(input$Comunidad[1], "(€ por habitante)")  
+  titulo <- paste(input$Regiones.Arima[1], "(€ por habitante)")  
   }
     if(input$ArimaParameters == 'free'){
       
@@ -1498,11 +1433,11 @@ renderPlotly({
     
     ts <- tb %>% 
     select(Año, Región, valores) %>% 
-    filter(Región %in% input$Comunidad[2]) %>% 
+    filter(Región %in% input$Regiones.Arima[2]) %>% 
     mutate(Año = as.numeric(Año)) %>% 
     as_tsibble(index = Año, key = Región) %>% 
     fill_gaps()
-  titulo <- paste(input$Comunidad[2], "(€ por habitante)")  
+  titulo <- paste(input$Regiones.Arima[2], "(€ por habitante)")  
   }
   
     if(input$ArimaParameters == 'free'){
