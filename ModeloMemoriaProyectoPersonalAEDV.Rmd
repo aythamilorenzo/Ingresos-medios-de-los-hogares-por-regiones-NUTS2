@@ -27,14 +27,9 @@ Sys.setlocale("LC_ALL", "es_ES.UTF-8")
 library(DT)
 library(googlesheets4)
 library(kableExtra)
-library(patchwork)
-library(zoo)
-library(MASS)
 library(flexdashboard)
-library(datasets)
 library(highcharter) 
 library(fpp3)
-library(RColorBrewer)
 library(openxlsx)  
 library(leaflet)  
 library(geojsonio)
@@ -44,8 +39,6 @@ library(gganimate)
 library(tidyverse)
 library(eurostat)
 library(knitr)
-library(webshot2)
-library(ggrepel)
 source("utilidades.R")
 
 
@@ -94,7 +87,12 @@ h1, h2, h3, h4 {
 }
 
 p {
-font-family: "Perpetua"
+font-family: "Times New Roman"
+}
+
+/* Forzar fuente en listas desordenadas y ordenadas */
+ul, ol, li {
+  font-family: "Times New Roman", Times, serif;
 }
 
 /* Subrayado bajo todos los títulos */
@@ -381,9 +379,50 @@ tabla
 
 ## Herramientas empleadas
 
-<!-- mencionar y justificar para este trabajo el uso de R, RStudio y las librerías principales utilizadas. Mencionar también el servidor shiny del DIS para desplegar públicamente el cuadro de mandos    --> 
+<br>
+
+El desarrollo de este proyecto se ha sustentado en un ecosistema de herramientas de código abierto, seleccionadas por su robustez en el análisis estadístico, su capacidad de visualización y su flexibilidad para el desarrollo de aplicaciones web interactivas.
+
+### R y RStudio: El Núcleo del Análisis
+
+<br>
+
+Como lenguaje de programación principal se ha utilizado **R**, debido a su posición dominante en el ámbito de la estadística y la ciencia de datos. Su capacidad nativa para manejar grandes volúmenes de datos estructurados y su inmensa colección de paquetes especializados lo convierten en la elección óptima frente a otras alternativas.
+
+El entorno de desarrollo integrado (IDE) elegido ha sido **RStudio**. Su interfaz facilita la gestión simultánea de scripts, consolas, visualización de gráficos y control de entornos, lo cual ha sido crucial para iterar rápidamente en el análisis exploratorio y la depuración del código.
+
+### Librerías Principales
+
+<br>
+
+El proyecto se apoya en un conjunto de librerías clave que han permitido transformar los datos brutos en conocimiento visualizable:
+
+* `tidyverse` **(dplyr, tidyr, ggplot2):** La columna vertebral del proyecto. Se ha empleado para la manipulación, limpieza y transformación de los datos (data wrangling), así como para la generación de gráficos estáticos de alta calidad mediante la gramática de gráficos.
+
+* `eurostat`: Fundamental para la ingesta automatizada y normalizada de los datos de población directamente desde la base de datos oficial de la Comisión Europea, garantizando la reproducibilidad del análisis.
+
+* `plotly` y `highcharter`: Utilizadas para dotar de interactividad avanzada a las visualizaciones, permitiendo al usuario final explorar los datos (tooltips, zoom, filtrado) de manera dinámica dentro del cuadro de mandos.
+
+* `gganimate`: Esta librería ha sido clave para incorporar la dimensión temporal de forma dinámica, permitiendo la creación de gráficos animados que ilustran la evolución del ranking de renta por países año a año, facilitando la comprensión de las tendencias de convergencia.
+
+* `leaflet` y `geojsonio`: Esenciales para el componente geoespacial. Han permitido la lectura de archivos GeoJSON y el renderizado de mapas coropléticos interactivos, integrando las geometrías NUTS con los indicadores económicos.
+
+* `fpp3` **(fable, tsibble):** Empleada para el análisis avanzado de series temporales. Ha facilitado la conversión de datos a estructuras temporales (`tsibble`), el tratamiento de huecos (`fill_gaps`) y la generación de modelos predictivos **ARIMA.**
+
+* `DT` y `kableExtra`: Utilizadas para la presentación tabular de los datos. `DT` ha permitido crear tablas interactivas con paginación y búsqueda en el cuadro de mandos, mientras que `kableExtra` se ha usado para el formateo estático de tablas en la memoria.
+
+* `openxlsx` y `googlesheets4`: Empleadas para la interoperabilidad con fuentes de datos externas. openxlsx ha permitido la ingesta de metadatos locales (relación con los ODS), mientras que googlesheets4 ha posibilitado la conexión en tiempo real con la hoja de cálculo de seguimiento del proyecto alojada en la nube.
+
+* `flexdashboard` y `shiny`: Estas librerías han sido la base para la construcción del producto final. `flexdashboard` ha permitido estructurar el análisis en un layout de cuadro de mandos (dashboard) responsivo, mientras que `shiny` ha inyectado la lógica reactiva necesaria (inputs dinámicos, renderizado condicional) para que los filtros y selectores controlen los gráficos en tiempo real.
+
+### Servidor Shiny del DIS
+
+<br>
+
+Para la difusión y acceso público del cuadro de mandos, se ha optado por el despliegue en el servidor **Shiny del Departamento de Informática y Sistemas (DIS).** Esta infraestructura permite alojar la aplicación de manera estable, asegurando que el procesamiento reactivo de los datos (como los modelos ARIMA o los filtros dinámicos de regiones) se ejecute en el servidor y se sirva al usuario final a través de cualquier navegador web. 
 
 ## Metodología
+
 
 Utilizaremos la metodología de desarrollo CRISP-DM (Cross Industry Standard Process for Data Mining) que es un marco ampliamente utilizado para proyectos de Ciencias de Datos. En la siguiente figura se presenta un diagrama con las diferentes fases de esta metodología que a continuación describimos con más detalle: 
 
@@ -740,7 +779,7 @@ data.combinaciones %>%
 
 ### Inconsistencias y datos faltantes
 
-En general, no se han encontrado inconsistencias y no hay datos faltantes en los casos de España y Canarias, que son las regiones más interesantes.
+En general, hay pocas observaciones cuando se trata de unidades PPS, que son las más interesantes, además algunos indicadores cuentan con pocas observaciones para hacer un buen análisis, en muchos casos habrá que normalizar los atributos ya que también faltan bastantes datos per cápita para algunos indicadores
 
 ```{r}
 # pasamos las fechas a columnas de la tabla y añadimos algunos datos 
@@ -2026,11 +2065,11 @@ La matriz de correlación revela una estructura económica altamente interconect
 
 **La Paradoja de las Prestaciones Pagadas:**
 
-Las **Prestaciones Sociales Pagadas** (es decir, las que salen de los hogares, no las que reciben) muestran una **correlación negativa débil (-0.23 a -0.29)** con todos los indicadores de riqueza. Esto sugiere que en las economías más ricas, los hogares no son los principales pagadores directos de estas prestaciones (probablemente financiadas por empresas o estado), o que este flujo es contra-cíclico respecto a la riqueza general.
+* Las **Prestaciones Sociales Pagadas** (es decir, las que salen de los hogares, no las que reciben) muestran una **correlación negativa débil (-0.23 a -0.29)** con todos los indicadores de riqueza. Esto sugiere que en las economías más ricas, los hogares no son los principales pagadores directos de estas prestaciones (probablemente financiadas por empresas o estado), o que este flujo es contra-cíclico respecto a la riqueza general.
 
 **Inversión y Ahorro:** 
 
-La **Inversión Fija** y el **Ahorro Neto** tienen una correlación perfecta (**1.0**) con la Renta Disponible. Esto implica que la capacidad de inversión y ahorro de un país no depende de factores culturales o preferencias, sino que es una función directa y lineal de su nivel de renta disponible: más renta disponible se traduce matemáticamente en mayor inversión y ahorro agregado.
+* La **Inversión Fija** y el **Ahorro Neto** tienen una correlación perfecta (**1.0**) con la Renta Disponible. Esto implica que la capacidad de inversión y ahorro de un país no depende de factores culturales o preferencias, sino que es una función directa y lineal de su nivel de renta disponible: más renta disponible se traduce matemáticamente en mayor inversión y ahorro agregado.
 
  En **conclusión**, el mapa de calor valida un modelo económico europeo cohesivo donde la generación de riqueza primaria impulsa simultáneamente la capacidad fiscal, el gasto social y la inversión productiva y por tanto es normal que en su mayoría las variables estén correlacionadas de manera que cuando una aumenta las demás por lo general también lo hacen ya que así funciona la economía.
  
@@ -2045,7 +2084,25 @@ Todo este análisis realizado se encuentra desarrollado en mayor detalle en el *
 
 ## Despliegue
 
-<!-- desarrollo de esta fase -->
+<br>
+
+El despliegue de este proyecto se ha realizado a través de la **confección de esta memoria y de un cuadro de mandos.**
+
+El cuadro de mandos del proyecto se ha llevado a cabo mediante el uso de las librerías `flexdashboard` y `shiny`, además de que puede verse publicamente gracias a que se encuentra alojado en un **servidor shiny del DIS.** Este cuadro de mandos se divide en 5 pestañas:
+
+* **Series temporales:** En esta pestaña se muestra todo lo relacionado con la evolución de atributos desde el año 2000 hasta 2022, se puede ver la evolución tanto por países como por regiones NUTS2 de dichos países. En la pestaña se pueden seleccionar opciones tales como elegir la unidad, los países o regiones que se desean ver, activar la escala del eje y libre, el indicador o incluso se pueden seleccionar todos los indicadores, cuando esta opción es seleccionada, los inputs se actualizan de manera que solo se pueda escoger un país o región y ver los indicadores para dicho país o región. En general todos los inputs son dinámicos y cambian en función de lo que el dataset nos ofrece para asegurarnos de que siempre se muestra algo por pantalla, también se han utilizado funciones reactivas que permiten normalizar muchos de los atributos para convertirlos a per cápita y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en euros por habitante, siendo que por unidades PPS por cápita hay pocos datos disponibles.
+Se imprime una tabla en la parte inferior de los inputs como resultado del filtrado de dichos inputs para tener una manera distinta de visualizar los datos. Por último es importante saber que cuando se ve la evolución por regiones de un país la unidad obligatoria es la de euros por habitante, el primer motivo es por la falta de datos en comunidades que no son las Españolas, el segundo es que para ver la evolución dentro de un país, no tiene mucho sentido usar unidades PPS ya que no están comparando regiones con mucha diferencia en el nivel de vida.
+
+* **Atributos por año:** Esta pestaña está basada en **mapas coropléticos** en los que se puede filtrar por país, región, indicador y año. Al igual que en la primera pestaña, se han implementado inputs dinámicos. Por último, al igual que en la primera pestaña, también se han utilizado funciones reactivas que permiten normalizar muchos de los atributos para convertirlos a per cápita y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en euros por habitante, siendo que por unidades PPS por cápita hay pocos datos disponibles.
+Se imprime una tabla en la parte inferior de los inputs como resultado del filtrado de dichos inputs para tener una manera distinta de visualizar los datos.
+
+* **Comparación de atributos:** En esta pestaña se utiliza un diagrama de dispersión para ver la relación entre dos variables económicas en el cual se pueden seleccionar el año inicial a partir del cual se toman los datos y las dos variables a comparar por país o región de dicho país. A dichos atributos se les puede aplicar transformaciones tales como raíz cuadrada, transformaciones logarítmicas o yeojohnson que permiten mejorar el modelo de regresión lineal, dando resultados más fieles a la realidad. En este caso no se da la opción de elegir la unidad y todos los atributos se encuentran en euros per cápita ya que para unidades PPS por habitante apenas hay observaciones, al igual que en las demás pestañas se han tenido que normalizar muchos atributos para convertirlos en atributos per cápita. Se imprime una tabla con los resultados del filtrado de los inputs a la derecha como una manera distinta de ver los datos.
+
+* **Predicción con ARIMA:** En esta pestaña se utiliza un modelo ARIMA para la hacer una predicción de un indicador económico a elegir, se permite elegir el año a partir del cual se empiezan a tomar los datos de la serie temporal, el número de años a predecir, los parámetros para el modelo ARIMA (siempre serán mejores aquelloa que hagan el intervalo de confianza más pequeño) y un máximo de dos países o regiones de dichos países a elegir para visualizar a la vez. Como en todas las pestañas se han tenido que normalizar los atributos y cuando se elige ver la predicción por regiones se pierde la opción de seleccionar la unidad por los motivos explicados anteriormente (falta de datos y de sentido). Todos los inputs se adaptan con dinamismo de manera que solo se puede seleccionar lo que el dataset nos ofrece.
+
+* **Análisis de atributos:** Por último tenemos esta pestaña que nos permite analizar todos los atributos para los que hay observaciones en el dataset, en este caso lo hacemos a un nivel global, siendo que solo podemos elegir el año de las observaciones y si queremos filtrar por regiones NUTS0 (países) o regiones NUTS2 (comunidades). En función de lo seleccionado tenemos muchas subpestañas que cambian. La primera es una pestaña donde únicamente se ponen los atributos como columnas y se deja el nombre de la región para ver los valores de sus atributos, todos en euros per cápita y muchos normalizados ya que para las demás unidades aparecerían muy pocos indicadores y el análisis carecería de sentido, a parte de que lo que interesa ver en esta parte es simplemente la relación de las variables y ver cuanto podríamos reducir la dimensionalidad de dichas variables de manera que podamos explicar la mayor variación de los datos posible, así que la unidad no es relevante en principio. En segundo lugar vemos una matriz de correlación que nos indica que tan correlacionadas están esas variables por países, región o año (en función de los inputs elegidos). Las siguientes subpestañas se centran en estandarizar los atributos para poder compararlos y se calculan las componentes principales, siendo las últimas dos pestañas las encargadas mostrar que porcentaje de la dispersión de los datos explica cada componente y la visualización de dichas componentes.   
+
+
 
 # Conclusiones y trabajo futuro
 
