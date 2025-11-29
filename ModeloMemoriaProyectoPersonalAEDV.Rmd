@@ -892,7 +892,7 @@ data <- read.csv("nama_10r_2hhinc.csv") %>%
 
 ```
 
-Ahora, vamos a convertir 'TIME_PERIOD' para que únicamente nos aparezca el año, quitando el día y el mes y además vamos a filtrar para que solo aparezcan los años desde el 2000 hasta el 2022, ya que son los años en los que hay más observaciones. Luego, como solo tenemos códigos de cada región y no sus nombres, vamos a añadirle una tabla que nos proporciona todos los nombres y su información de NUTS a partir de su código `geo`. 
+Ahora, vamos a convertir `TIME_PERIOD` para que **únicamente nos aparezca el año**, quitando el día y el mes y además vamos a filtrar para que solo aparezcan los años **desde el 2000 hasta el 2022**, ya que son los años en los que hay más observaciones. Luego, como solo tenemos códigos de cada región y no sus nombres, vamos a añadirle una tabla que nos proporciona **todos los nombres y su información de NUTS** a partir de su código `geo`. 
 ```{r carga_dataset}
 data <- data %>%
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>%
@@ -907,7 +907,7 @@ data <- data %>%
   
 ```
 
-A continuación vamos a cargar un dataset de población que toma como población la media de cada año, esto es lo más correcto para normalizar datos económicos para los que no se tienen datos per cápita como sucede en nuestro caso para muchos indicadores. En cada caso que lo necesitemos, simplemente uniremos esta tabla a otra filtrada con los paises o provincias que queramos por la columna `geo` y `TIME_PERIOD` y normalizaremos los valores necesarios. Le cambiamos el nombre a la  columna `values` por `poblacion` para evitar confusiones. Eliminamos las columnas de `freq` y `unit` ya que solo tienen un valor y no nos sirven de nada, por último cambiamos el formato de fecha para que aparezca únicamente el año y lo pasamos a dato numérico.
+A continuación vamos a cargar un dataset de población que toma como población **la media de cada año**, esto es lo más correcto para normalizar datos económicos para los que no se tienen datos per cápita como sucede en nuestro caso para muchos indicadores. En cada caso que lo necesitemos, simplemente uniremos esta tabla a otra filtrada con los paises o provincias que queramos por la columna `geo` y `TIME_PERIOD` y normalizaremos los valores necesarios. Le cambiamos el nombre a la  columna `values` por `poblacion` para evitar confusiones. Eliminamos las columnas de `freq` y `unit` ya que solo tienen un valor y no nos sirven de nada, por último cambiamos el formato de fecha para que aparezca únicamente el año y lo pasamos a dato numérico.
 ```{r}
 poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>% 
   as_tibble() %>% 
@@ -920,9 +920,9 @@ poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>%
 
 <br>
 
-Para este apartado y el siguiente, procederemos a hacer un breve análisis que va desde dentro de España hacia afuera, terminando con una visión general sobre algunos datos.
+Para este apartado y el siguiente, procederemos a hacer un breve análisis que va **desde dentro de España hacia afuera**, terminando con una visión general sobre algunos datos. Cuando analicemos las comunidades de España usaremos **euros per cápita**, ya que las unidades PPS se utilizan para hacer comparaciones de regiones diferentes donde el precio de la vida bastante diferente.
 
-Para empezar, comenzamos viendo la evolución de uno de los indicadores económicos más importante a nivel de bienestar de la población por comunidades de España, la renta neta en euros per cápita.
+Para empezar, comenzamos viendo la evolución de uno de los indicadores económicos más importante a nivel de bienestar de la población por comunidades de España, la **renta neta en euros per cápita.**
 
 <br>
 
@@ -962,15 +962,15 @@ ggplotly(data.es.plot, tooltip = "text")
 
 <br>
 
-El análisis de la renta neta en España revela una tendencia alcista estructural, interrumpida únicamente por dos choques sistémicos claros: el estallido de la burbuja inmobiliaria (2008-2013) y la crisis sanitaria del COVID-19 (2020). Si bien todas las regiones comparten este ciclo, se observa una divergencia persistente: las comunidades del norte y capitalinas (País Vasco, Navarra y Madrid) no solo lideran el ranking, sino que muestran una recuperación más robusta tras las crisis gracias a su tejido industrial y de servicios de alto valor.
+El análisis de la **renta neta** en España revela una tendencia alcista estructural, interrumpida únicamente por dos choques sistémicos claros: el estallido de la burbuja inmobiliaria (2008-2013) y la crisis sanitaria del COVID-19 (2020). Si bien todas las regiones comparten este ciclo, se observa una divergencia persistente: las comunidades del norte y capitalinas (**País Vasco, Navarra y Madrid**) no solo lideran el ranking, sino que muestran una recuperación más robusta tras las crisis gracias a su tejido industrial y de servicios de alto valor.
 
-Como dato curioso, pese a la recuperación general, muchas regiones tardaron casi una década en recuperar los niveles de poder adquisitivo previos a 2008, lo que evidencia la rigidez del mercado laboral español ante las recesiones." 
+Como dato curioso, pese a la recuperación general, muchas regiones tardaron casi una década en recuperar los niveles de poder adquisitivo previos a 2008, lo que evidencia la rigidez del mercado laboral español ante las recesiones.
 
 <br>
 <hr>
 <br>
 
-Tras un primer vistazo sobre la renta neta en cada país, echemos un vistazo ahora a la capacidad de ahorro neto en euros per cápita por comunidades de España, y veamos si hay alguna similitud ya que la renta neta y la capacidad de ahorro deberían estar relacionadas. En este caso en lugar de ver una evolución, tenemos datos del último año que nos ofrece este dataset, 2022.
+Tras un primer vistazo sobre la **renta neta** en cada país, echemos un vistazo ahora a la **capacidad de ahorro neto en euros per cápita** por comunidades de España, y veamos si hay alguna similitud ya que la renta neta y la capacidad de ahorro deberían estar relacionadas. En este caso en lugar de ver una evolución, tenemos datos del último año que nos ofrece este dataset, 2022.
 
 <br>
 
@@ -1016,13 +1016,13 @@ ggplotly(data.ahorro.es.plot, tooltip = "text")
 
 <br>
 
-En general, los países que mejor renta neta per cápita presentaban son los que se encuentran más arriba en esta gráfica, como vemos, Canarias se sitúa bastante abajo en estos términos.
+En general, los países que mejor **renta neta per cápita** presentaban son los que se encuentran más arriba en esta gráfica, como vemos, **Canarias** se sitúa bastante abajo en estos términos.
 
 <br>
 <hr>
 <br>
 
-Para confirmar que efectivamente una mayor renta neta se traduce directamente en una mayor capacidad de ahorro neto, podemos echar un vistazo a este diagrama de dispersión animado que relaciona estos 2 conceptos por las diferentes comunidades autónomas a lo largo de los años.
+Para confirmar que efectivamente una mayor renta neta se traduce directamente en una mayor capacidad de ahorro neto, podemos echar un vistazo a este diagrama de dispersión animado que **relaciona** estos 2 conceptos por las diferentes comunidades autónomas a lo largo de los años en euros per cápita.
 
 <br>
 
@@ -1065,9 +1065,9 @@ ggplotly(data.spain.disp.plot, tooltip = "text") %>%
 
 Como podemos ver existe una fuerte correlación entre la renta y el ahorro, en general las comunidades con mayor **renta neta** también presentan mayor **capacidad de Ahorro**. Se aprecian claramente retrocesos en los años de crisis y algo curioso es que a lo largo de los años las comunidades se alejan más unas de las otras, reflejando una mayor desigualdad en estos términos.
 
-Las regiones como País Vasco, Navarra y Madrid se sitúan claramente por encima de la media nacional, mientras que Andalucía, Extremadura o Canarias presentan niveles más bajos tanto de renta como de ahorro.
+Las regiones como **País Vasco, Navarra y Madrid** se sitúan claramente por encima de la media nacional, mientras que **Andalucía, Extremadura o Canarias** presentan niveles más bajos tanto de renta como de ahorro.
 
-Esto sugiere diferencias estructurales regionales en el poder adquisitivo y la capacidad de ahorro de los hogares.
+Esto sugiere **diferencias estructurales regionales** en el poder adquisitivo y la capacidad de ahorro de los hogares.
 
 <br>
 <hr>
@@ -1120,13 +1120,13 @@ data.spain.pie %>%
   
 <br>
 
-Tras analizar la gráfica de disco, vemos que efectivamente las regiones del sur de España y Canarias presentan un menor poder adquisitivo y por consecuente, una menor capacidad de ahorro. La mayor parte de la renta cae sobre Madrid y las regiones del Noreste y Noroeste.
+Tras analizar la gráfica de disco, vemos que efectivamente las regiones del sur de España y Canarias presentan un **menor poder adquisitivo** y por consecuente, una **menor capacidad de ahorro.** La mayor parte de la renta cae sobre **Madrid y las regiones del Noreste y Noroeste.**
 
 <br>
 <hr>
 <br>
 
-Ya que conocemos bien la renta neta que presenta cada comunidad en España, echemos un vistazo ahora a los impuestos sobre renta y patrimonio que se pagan en cada una, medidos en euros por habitante y representados mediante un mapa de calor. Tenemos datos desde el año 2016 hasta el 2022.
+Ya que conocemos bien la renta neta que presenta cada comunidad en España, echemos un vistazo ahora a los **impuestos sobre renta y patrimonio** que se pagan en cada una, medidos en euros por habitante y representados mediante un mapa de calor. Tenemos datos desde el año 2016 hasta el 2022.
 
 <br>
 
@@ -1170,7 +1170,7 @@ ggplotly(data.imp.comunidades.plot, tooltip = "text")
 
 <br>
 
-El mapa de calor de Impuestos sobre Renta y Patrimonio (D.5) per cápita entre 2016 y 2022 es, en realidad, un mapa de la riqueza regional de España. Los tonos más oscuros confirman la relación fundamental de la fiscalidad: las comunidades que más pagan son las que más generan.
+El mapa de calor de **Impuestos sobre Renta y Patrimonio** per cápita entre 2016 y 2022 es, en realidad, un mapa de la riqueza regional de España. Los tonos más oscuros confirman la relación fundamental de la fiscalidad: las comunidades que más pagan son las que más generan.
 
 **Riqueza como Causa**: Regiones como la Comunidad de Madrid, el País Vasco y Navarra muestran la mayor presión fiscal directa (azul intenso). Esto se debe a que su Renta Disponible Neta es históricamente más alta, lo que automáticamente eleva el pago del IRPF debido a su naturaleza progresiva. El alto nivel de impuestos es el resultado de una base imponible (ingresos) superior.
 
@@ -1187,7 +1187,7 @@ El mapa de calor de Impuestos sobre Renta y Patrimonio (D.5) per cápita entre 2
 <hr>
 <br>
 
-Para finalizar con las comunidades de España, veamos mediante un diagrama de cajas, como se distribuyen los 3 principales indicadores económicos, Ingreso primario neto, Renta neta y Ahorro neto por las distintas comunidades españolas en euros por habitante.
+Para finalizar con las comunidades de España, veamos mediante un diagrama de cajas, como se distribuyen los 3 principales indicadores económicos, **Ingreso primario neto, Renta neta y Ahorro neto** por las distintas comunidades españolas en euros por habitante.
 
 <br>
 ```{r, fig.asp = 0.8}
@@ -1238,7 +1238,7 @@ ggplotly(data.spain.box.plot, tooltip = 'text')
 
 <br>
 
-Como comentábamos, este gráfico muestra la distribución de los distintos tipos de ingreso por habitante en las regiones españolas. Se observa que el ingreso primario (B5N) es el más alto y disperso, mientras que el ingreso disponible (B6N) se reduce tras impuestos y transferencias, evidenciando el efecto redistributivo. El ahorro (B7N) presenta mayor variabilidad, reflejando diferencias regionales en la capacidad de ahorro. Los outliers principalmente se corresponden con regiones con niveles excepcionalmente altos en estos indicadores, sobretodo Madrid y País Vasco como ya hemos visto, donde el PIB y las rentas tienden a ser más elevadas.
+Como comentábamos, este gráfico muestra la distribución de los distintos tipos de ingreso por habitante en las regiones españolas. Se observa que el **ingreso primario (B5N)** es el más alto y disperso, mientras que la **renta neta (B6N)** se reduce tras impuestos y transferencias, evidenciando el efecto redistributivo. **El ahorro (B7N)** presenta mayor variabilidad, reflejando diferencias regionales en la capacidad de ahorro. Los outliers principalmente se corresponden con regiones con niveles excepcionalmente altos en estos indicadores, sobretodo Madrid y País Vasco como ya hemos visto, donde el PIB y las rentas tienden a ser más elevadas.
 
 <br>
 <hr>
@@ -1254,7 +1254,7 @@ ParetoSignificancia # número en [0,1] con el grado de significancia de Pareto
 }
 ```
 
-Centrémonos ahora en visualizar y comparar a España como país, en este caso tendremos que usar unidades PPS mayoritariamente siempre que el dataset nos ofrezca datos en esta unidad, ya que estamos comparando distintos países. 
+Centrémonos ahora en **visualizar y comparar a España como país**, en este caso tendremos que usar **unidades PPS** mayoritariamente siempre que el dataset nos ofrezca datos en esta unidad, ya que estamos comparando distintos países. 
 
 En primer lugar vamos a utilizar una función de pareto para quedarnos con los países que poseen el 80% de la renta neta de Europa entre los cuales se encuentra España y vamos a ver un gráfico de barras animado que nos muestra la evolución de esos países cada año.
 
@@ -1299,27 +1299,27 @@ animate(data.topPPS.plot, fps = 2, end_pause = 10)
 
 <br>
 
-Vemos que, en general, España es un país que se mueve en valores de renta cercanos a los de la media de la Unión Europea. El declive posterior a 2008 es un reflejo de la fuerte dependencia de España de sectores cíclicos (como la construcción y el turismo) y del alto desempleo estructural. Mientras que las economías industriales del norte rebotaron con relativa rapidez tras la crisis financiera, el crecimiento de la renta española se estancó. Vemos que los dos países con mejores niveles de renta neta per cápita son Luxemburgo y Alemania, vamos a comentar estos dos casos por separado.
+Vemos que, en general, **España** es un país que se mueve en valores de renta cercanos a los de la media de la Unión Europea. El declive posterior a 2008 es un reflejo de la fuerte dependencia de España de sectores cíclicos (como la construcción y el turismo) y del alto desempleo estructural. Mientras que las economías industriales del norte rebotaron con relativa rapidez tras la crisis financiera, el crecimiento de la renta española se estancó. Vemos que los dos países con mejores niveles de renta neta per cápita son **Luxemburgo y Alemania**, vamos a comentar estos dos casos por separado.
 
-Luxemburgo es un caso atípico que distorsiona las métricas macroeconómicas de renta per cápita, lo cual es importante para interpretar cualquier resultado:
+**Luxemburgo es un caso atípico** que distorsiona las métricas macroeconómicas de renta per cápita, lo cual es importante para interpretar cualquier resultado:
 
- * **Centro Fiscal**: Gran parte de la renta contable se genera por los beneficios de   empresas multinacionales y los flujos financieros que se registran en el país por    motivos fiscales.
+ * **Centro Fiscal**: Gran parte de la renta contable se genera por los beneficios de empresas multinacionales y los flujos financieros que se registran en el país por motivos fiscales.
 
-* **Efecto de Denominador**: Al ser un país pequeño, cuando estos flujos de capital    se dividen por una población relativamente reducida, la cifra per cápita se dispara   artificialmente, sin que este aumento refleje necesariamente el poder adquisitivo    directo del trabajador promedio residente.
+* **Efecto de Denominador**: Al ser un país pequeño, cuando estos flujos de capital se dividen por una población relativamente reducida, la cifra per cápita se dispara artificialmente, sin que este aumento refleje necesariamente el poder adquisitivo directo del trabajador promedio residente.
 
 La alta renta alemana se sustenta en su potente base industrial y manufacturera.
 
-  * **Valor Añadido Bruto** (VAB): El enfoque en la ingeniería, la automoción de alta     gama y la química asegura que la producción nacional genere un VAB elevado.
+  * **Valor Añadido Bruto** (VAB): El enfoque en la ingeniería, la automoción de alta gama y la química asegura que la producción nacional genere un VAB elevado.
 
-  * **Estabilidad**: Esta estructura de exportación de bienes de capital proporciona     una fuente de ingresos nacionales estable y constante, lo que se traslada a          salarios altos y, por ende, a una renta disponible por habitante consistentemente     superior a la media.
+  * **Estabilidad**: Esta estructura de exportación de bienes de capital proporciona una fuente de ingresos nacionales estable y constante, lo que se traslada a salarios altos y, por ende, a una renta disponible por habitante consistentemente superior a la media.
 
 <br>
 <hr>
 <br>
 
-Continuémos viendo la evolución económica de los países, en este caso vamos a echar un vistazo a la evolución del ingreso primario neto, es decir, los ingresos brutos per cápita de cada país medidos en unidades PPS. Dado que Europa tiene muchos países, utilizaremos de nuevo la función de Pareto para quedarnos solo con los que poseen el 80% de este valor.
+Continuémos viendo la evolución económica de los países, en este caso vamos a echar un vistazo a la **evolución del ingreso primario neto**, es decir, los ingresos brutos per cápita de cada país medidos en unidades PPS. Dado que Europa tiene muchos países, en este caso mostraremos los países más interesantes a comparar con España.
 
-En este caso lo visualizaremos esto con un gráfico de líneas.
+Ilustraremos esto con un gráfico de líneas.
 
 <br>
 
@@ -1350,14 +1350,14 @@ datats.evolucion.ingresoprimario %>%
 
 <br>
 
-En general con este gráfico llegamos a las mismas conclusiones que antes pero, sin embargo, este nos permite más enforcanos que valores toma España con respecto a la media de la Unión Europea, vemos con claridad que hasta antes de la crisis del 2008 España se situaba por encima de esta y que después de dicha crisis no consigue recuperase de la misma manera a pesar de que la tendencia sigue siendo ascendente.
+En general con este gráfico llegamos a las mismas conclusiones que antes pero, sin embargo, este nos permite más enforcanos que valores toma España con respecto a la **media de la Unión Europea**, vemos con claridad que hasta antes de la crisis del 2008 España se situaba por encima de esta y que después de dicha crisis **no consigue recuperase de la misma manera que la media** a pesar de que la tendencia sigue siendo ascendente.
 
 
 <br>
 <hr>
 <br>
 
-Y bueno ya que venimos viendo la evolución del ingreso primario neto (ingreso bruto), puede ser interesante ver en cada país la intervención del Estado sobre este ingreso primario, es decir, cuánto dinero pierde o gana un hogar después de que el Estado aplica impuestos y devuelve beneficios, para este caso también incluiremos a Canarias junto con los países.
+Y bueno ya que venimos viendo la evolución del ingreso primario neto (ingreso bruto), puede ser interesante ver en cada país la **intervención del Estado sobre este ingreso primario**, es decir, **cuánto dinero pierde o gana un hogar después de que el Estado aplica impuestos y devuelve beneficios (prestaciones sociales recibidas)**, para este caso también incluiremos a **Canarias** junto con los países.
 
 Para cuantificar y visualizar el impacto de la intervención del Estado en el ingreso de los hogares, se utiliza la Renta Disponible Neta, la cual, por definición en las cuentas nacionales, es el resultado final después de aplicar impuestos y transferencias sociales.
 
@@ -1419,7 +1419,7 @@ ggplotly(p_diferencia, tooltip = "text")
 
 <br>
 
-El gráfico de Efecto Neto de la Redistribución Fiscal muestra una clara y pronunciada polarización económica en Europa, revelando la diferencia entre el Ingreso Primario y la Renta Disponible.
+El gráfico de Efecto Neto de la Redistribución Fiscal muestra una clara y pronunciada polarización económica en Europa, revelando la diferencia entre el **Ingreso Primario** y la **Renta Disponible.**
 
 El resultado evidencia que las economías se dividen en dos grandes grupos:
 
@@ -1486,11 +1486,11 @@ ggplotly(data.imp.plot, tooltip = "text")
 ```
 <br>
 
-El mapa de calor de la Carga Fiscal Directa y Contribuciones Sociales (D5+D61) revela una nítida polarización entre la Europa del Norte y la del Este, lo cual confirma la solidez de los Estados de Bienestar en las regiones más ricas.
+El mapa de calor de la **Presión Fiscal Directa** revela una nítida polarización entre la Europa del Norte y la del Este, lo cual confirma la solidez de los Estados de Bienestar en las regiones más ricas.
 
-El análisis muestra que los países escandinavos y del Benelux (Dinamarca, Países Bajos y Suecia) imponen la mayor presión fiscal directa sobre el ingreso (por encima de los 20.000€ per cápita en varios casos), lo cual se debe a la financiación de sus amplios sistemas de seguridad social. En contraste, países con economías de menor escala (como Bulgaria, Croacia o Rumania) muestran la carga fiscal más baja. España se posiciona en un nivel intermedio-alto de contribución fiscal, lo cual es coherente con su rol como economía grande en la Eurozona.
+El análisis muestra que los países escandinavos y del Benelux (**Dinamarca, Países Bajos y Suecia**) imponen la mayor presión fiscal directa sobre el ingreso (por encima de los 20.000€ per cápita en varios casos), lo cual se debe a la financiación de sus amplios sistemas de seguridad social. En contraste, países con economías de menor escala (como Bulgaria, Croacia o Rumania) muestran la carga fiscal más baja. **España** se posiciona en un nivel intermedio-alto de contribución fiscal, lo cual es coherente con su rol como economía grande en la Eurozona.
 
-El dato curioso es que esta visualización confirma que los países con la mayor presión fiscal (Dinamarca, Países Bajos) son precisamente los que resultaron ser Pagadores Netos en el análisis anterior, demostrando que la magnitud de la recaudación es la que dicta el saldo fiscal final.
+El dato curioso es que esta visualización confirma que los países con la mayor presión fiscal (**Dinamarca, Países Bajos**) son precisamente los que resultaron ser Pagadores Netos en el análisis anterior, demostrando que la magnitud de la recaudación es la que dicta el saldo fiscal final.
 
 <br>
 <hr>
@@ -2106,12 +2106,13 @@ ggplotly(p)
 
 ```{r,cache=FALSE}
 p <- SeguimientoActividadesProyecto%>%
-  mutate(weekwork=yearweek(as.Date(START))) %>% 
-  group_by(weekwork)%>%
+  mutate(week=yearweek(as.Date(START))) %>% 
+  group_by(week)%>%
    summarise(
      HORAS=round(sum(MINUTES)/60,digits = 1)
    )%>%
-  ggplot(aes(weekwork,HORAS, fill = weekwork)) +
+  ungroup() %>% 
+  ggplot(aes(week,HORAS, fill = week)) +
   theme_bw(base_size = 12) +
   geom_bar(stat = "identity") +
   geom_text(aes(label=HORAS),size=3,colour = "blue",nudge_y = 0.2)+ 
