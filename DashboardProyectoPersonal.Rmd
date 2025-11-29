@@ -105,20 +105,15 @@ body {
 
 ```{r global, include=FALSE}
 # carga de librerías
-library(pxR)
-library(patchwork)
-library(MASS)
 library(flexdashboard)
-library(datasets)
 library(highcharter) 
 library(fpp3)
-library(RColorBrewer)
-library(openxlsx)  
 library(leaflet)  
 library(geojsonio)
 library(plotly)
 library(ggplot2)
 library(tidyverse)
+library(shiny)
 source("utilidades.R")
 
 # asociamos funciones a determinadas librerías para evitar posibles errores 
@@ -215,7 +210,7 @@ poblacion <- read.csv("poblacion.csv") %>%
 
 
 
-Series Temporales
+Series temporales
 =======================================================================
 
 
@@ -835,7 +830,7 @@ leaflet::renderLeaflet({
 
 ```
 
-Comparación Atributos
+Comparación de atributos
 ==================================================
 
 Column {.sidebar data-width=250}
@@ -1104,7 +1099,7 @@ renderPlotly({
   tb <- input.processing.comparacion()[[1]] 
   
   
-    tb %>%
+  p <- tb %>%
     ggplot(aes(x,
                y)) + 
     geom_point() +
@@ -1112,6 +1107,8 @@ renderPlotly({
     geom_smooth(method = lm, se = FALSE) + 
       labs(x = "(€/HAB)",
            y = "(€/HAB)")
+  
+  ggplotly(p, tooltip = c("x", "y", "Año"))
 })
 ```
 
@@ -1135,7 +1132,7 @@ renderTable({
 ```
 
 
-ARIMA 
+Predicción con ARIMA 
 ==================================================
 
 Column {.sidebar data-width=290}
@@ -1463,7 +1460,7 @@ renderPlotly({
 ```
 
 
-Análisis de Atributos
+Análisis de atributos
 ==================================================
 
 Column {.tabset}
