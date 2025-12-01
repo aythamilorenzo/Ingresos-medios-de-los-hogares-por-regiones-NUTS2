@@ -1,7 +1,6 @@
 ---
 title: "Ingresos medios de los hogares por NUTS2"
 author: "Aythami Lorenzo"
-date: "`r Sys.Date()`"
 output: flexdashboard::flex_dashboard
 runtime: shiny
 ---
@@ -244,7 +243,12 @@ output$Indicador.paises.dinamico.ui <- shiny::renderUI({
                   "Inversión en activos fijos" = "P51C")
   }
   
-  shiny::selectInput("Indicador.series", label = "Indicador", choices = opciones, selected = "B6N", width = '240px')
+  shiny::selectInput(
+    "Indicador.series", 
+    label = "Indicador", 
+    choices = opciones, 
+    selected = "B6N", 
+    width = '240px')
 })
 
 ```
@@ -274,10 +278,11 @@ conditionalPanel(
 
 conditionalPanel(
   condition = "input.Alcance == 'Países' && input['Indicador.series'] != 'Todos los indicadores'",
+  
   shiny::selectInput(
     "Paises.series", label = "Países",
-    choices = unique((data %>% 
-                       filter(NUTS == 0))$full_name),
+    choices = data %>% 
+    filter((NUTS == 0) | (full_name == 'Media UE')) %>% pull(full_name) %>% unique(),
     selected = c("Spain", "Portugal", "France"),
     multiple = TRUE
   )
@@ -288,8 +293,8 @@ conditionalPanel(
   condition = "input.Alcance == 'Países' && input['Indicador.series'] == 'Todos los indicadores'",
   shiny::selectInput(
     "Paises.series2", label = "País",
-    choices = unique((data %>% 
-                       filter(NUTS == 0))$full_name),
+    choices = data %>% 
+    filter((NUTS == 0) | (full_name == 'Media UE')) %>% pull(full_name) %>% unique(),
     selected = "Spain"
   )
 )
@@ -303,8 +308,8 @@ conditionalPanel(
   shiny::selectInput(
     "Pais.Padre",  
     label = "País:",
-    choices = unique((data %>% 
-                       filter(NUTS == 0))$full_name),
+    choices = (data %>% 
+                       filter(NUTS == 0)) %>% pull(full_name) %>% unique(),
     selected = "Spain"
   ),
   
@@ -372,7 +377,7 @@ output$UI.Selector.Regiones <- shiny::renderUI({
 ```{r}
 input.processing.series.temporales <- reactive({
   
-
+  req(input$Paises.series, input$Alcance, input$Unidad.series)
   if (isTRUE(input$Unidad.series == 'EUR_HAB')) unidad_simbolo = "€/HAB" else unidad_simbolo = "PPS/HAB"
   
 
@@ -394,7 +399,7 @@ input.processing.series.temporales <- reactive({
     if(input$Alcance == "Países") {
       req(input$Paises.series2)
       tb <- data %>% 
-        filter(NUTS == 0, full_name == input$Paises.series2[1], na_item %in% codigos_regiones, unit == unit.series) %>% 
+        filter(((NUTS == 0) | (full_name == 'Media UE')), full_name == input$Paises.series2[1], na_item %in% codigos_regiones, unit == unit.series) %>% 
         filter(!(na_item %in% c("D4", "D62")) | direct == "RECV") %>% 
         filter(!(na_item == "D61") | direct == "PAID") %>% 
         left_join(poblacion, by = c("geo", "TIME_PERIOD")) %>% 
@@ -427,10 +432,10 @@ input.processing.series.temporales <- reactive({
     
      unidad_filtro <- input$Unidad.series
      if(input$Indicador.series %in% c("B5N", "B6N")) {
-        tb <- data %>% filter(NUTS==0, na_item==input$Indicador.series, unit==unidad_filtro, full_name %in% input$Paises.series) %>% rename(valores=values)
+        tb <- data %>% filter(((NUTS == 0) | (full_name == 'Media UE')), na_item==input$Indicador.series, unit==unidad_filtro, full_name %in% input$Paises.series) %>% rename(valores=values)
      } else {
         
-        tb <- data %>% filter(NUTS==0, na_item==input$Indicador.series, unit=="MIO_EUR", full_name %in% input$Paises.series) 
+        tb <- data %>% filter(((NUTS == 0) | (full_name == 'Media UE')), na_item==input$Indicador.series, unit=="MIO_EUR", full_name %in% input$Paises.series) 
         if(input$Indicador.series %in% c("D4", "D62")) tb <- tb %>% filter(direct=="RECV")
         tb <- tb %>% left_join(poblacion, by=c("geo","TIME_PERIOD")) %>% mutate(valores=(values*1000000)/(poblacion*1000))
      }
@@ -474,10 +479,8 @@ input.processing.series.temporales <- reactive({
 ```{r}
 renderTable({
   
-  req(nrow(input.processing.series.temporales()[[1]]) > 0)
-  
-  
-  
+  req(input$Paises.series, input$Alcance, input$Unidad.series)
+  req(input.processing.series.temporales()[[1]])
   tb <- input.processing.series.temporales()[[1]]
   
   tb %>% 
@@ -502,7 +505,8 @@ Column
 
 ```{r}
 renderPlotly({
-  
+
+  req(input$Paises.series, input$Alcance, input$Unidad.series)
   req(input.processing.series.temporales()[[1]])
   req(input.processing.series.temporales()[[2]])
 
@@ -579,6 +583,8 @@ shiny::uiOutput("Indicador.mapa.dinamico")
 
 output$Indicador.mapa.dinamico <- shiny::renderUI({
   
+  req(input$NUTS, input$Unidad)
+  
   if(input$NUTS == 2) {
     if(input$Unidad == "PPS_EU27_2020_HAB") {
 
@@ -650,8 +656,8 @@ shiny::sliderInput(
   max = last(data$TIME_PERIOD),
   value = 2016,
   step = 1,
-  
-  ticks = FALSE
+  ticks = FALSE,
+  sep = "" 
 )
 ```
 
@@ -660,6 +666,7 @@ shiny::sliderInput(
 ```{r}
 input.processing.atributo.año <- reactive({
     
+    req(input$Año, input$NUTS, input$Indicador.mapa)
   
     if(input$Indicador.mapa %in% c('B5N', 'B6N')) {
     tb <- data %>% 
@@ -711,6 +718,8 @@ input.processing.atributo.año <- reactive({
 
 ```{r}
 shiny::renderTable({
+  
+  req(input.processing.atributo.año(), input$Año, input$NUTS, input$Indicador.mapa)
   
   tb <- input.processing.atributo.año()[[1]] %>% 
     arrange(desc(values)) %>% 
@@ -839,15 +848,15 @@ Column {.sidebar data-width=250}
 
 ```{r inicio_comparacion}
 
-# 1. SELECTOR ALCANCE
+
 shiny::selectInput(
   "Alcance.comparacion",
   label = "Alcance",
-  choices = c("Países", "Regiones"), # <--- CAMBIO: 'Comunidades España' -> 'Regiones'
+  choices = c("Países", "Regiones"), 
   selected = "Países"
 )
 
-# 2. INPUTS X e Y (DINÁMICOS - Se mantienen igual)
+
 shiny::uiOutput("Indicadores.comparacion.ui.x")
 
 shiny::selectInput(
@@ -866,7 +875,7 @@ shiny::selectInput(
   selected = "none"
 )
 
-# Lógica de opciones para X e Y (Adaptada a 'Regiones')
+
 output$Indicadores.comparacion.ui.x <- shiny::renderUI({
   req(input$Alcance.comparacion)
   if (input$Alcance.comparacion == "Países") {
@@ -888,7 +897,7 @@ output$Indicadores.comparacion.ui.y <- shiny::renderUI({
 })
 
 
-# 3. SELECTOR AÑO
+
 shiny::selectInput(
   "Año.comparacion",
   label = "Año Inicial",
@@ -897,15 +906,15 @@ shiny::selectInput(
 )
 
 
-# --- 4. LÓGICA DE SELECCIÓN DE TERRITORIO (REESTRUCTURADA) ---
 
-# CASO PAÍSES: Solo seleccionamos el país objetivo
+
+
 conditionalPanel(
   condition = "input['Alcance.comparacion'] == 'Países'",
   shiny::selectInput(
     "Pais.comparacion",
     label = "País",
-    choices = unique((data %>% filter(NUTS == 0))$full_name),
+    choices = data %>% filter((NUTS == 0 | full_name == 'Media UE')) %>% pull(full_name) %>% unique(),
     selected = "Spain"
   )
 )
@@ -967,13 +976,13 @@ output$UI.Region.Comparacion <- shiny::renderUI({
 ```{r}
 input.processing.comparacion <- reactive({
   
-  # Barrera de seguridad: Esperar a que los inputs existan
+  
   req(input$X, input$Y, input$Alcance.comparacion)
   
   indicador_x <- input$X
   indicador_y <- input$Y
   
-  # --- LÓGICA DE FILTRADO Y PIVOTE ---
+  
   
   if(input$Alcance.comparacion == "Países") {
     
@@ -981,7 +990,7 @@ input.processing.comparacion <- reactive({
     
     tb <- data %>% 
       filter(
-        NUTS == 0, 
+        ((NUTS == 0) | (full_name == 'Media UE')), 
         full_name == input$Pais.comparacion, 
         na_item %in% c(indicador_x, indicador_y), 
         unit == "MIO_EUR"
@@ -993,7 +1002,7 @@ input.processing.comparacion <- reactive({
       select(-values) %>% rename(values = per.capita) %>% 
       
       # Pivote
-      select(full_name, TIME_PERIOD, na_item, values) %>% # Limpieza previa clave
+      select(full_name, TIME_PERIOD, na_item, values) %>% 
       pivot_wider(names_from = na_item, values_from = values) %>% 
       
       # Selección final de columnas X e Y
@@ -1002,7 +1011,7 @@ input.processing.comparacion <- reactive({
       
   } else { # Alcance == "Regiones"
     
-    req(input$Comunidad.comparacion) # Esperamos al input dinámico de región única
+    req(input$Comunidad.comparacion)
     
     tb <- data %>% 
       filter(
@@ -1183,7 +1192,7 @@ conditionalPanel(
   shiny::selectInput(
     "Pais", 
     label = "Países (Máx 2)",
-    choices = unique((data %>% filter(NUTS == 0))$full_name),
+    choices = data %>% filter((NUTS == 0 | full_name == 'Media UE')) %>% pull(full_name) %>% unique(),
     selected = c("Spain", "France"),
     multiple = TRUE 
   ),
@@ -1280,7 +1289,7 @@ input.processing.arima <- reactive({
     if(input$Scope == 'Países') {
        req(input$Pais) 
        tb <- data %>% 
-         filter(NUTS == 0, na_item == input$Indicador.arima, unit == unidad_filtro) %>% 
+         filter(((NUTS == 0) | (full_name == 'Media UE')), na_item == input$Indicador.arima, unit == unidad_filtro) %>% 
          filter(full_name %in% input$Pais[1:2]) 
     } else {
        req(input$Regiones.Arima) 
@@ -1296,7 +1305,7 @@ input.processing.arima <- reactive({
     
     if(input$Scope == 'Países') {
        req(input$Pais)
-       tb <- data %>% filter(NUTS == 0, na_item == input$Indicador.arima, unit == 'MIO_EUR', direct == 'RECV', full_name %in% input$Pais[1:2])
+       tb <- data %>% filter(((NUTS == 0) | (full_name == 'Media UE')), na_item == input$Indicador.arima, unit == 'MIO_EUR', direct == 'RECV', full_name %in% input$Pais[1:2])
     } else {
        req(input$Regiones.Arima)
        tb <- data %>% filter(NUTS == 2, na_item == input$Indicador.arima, unit == 'MIO_EUR', direct == 'RECV', full_name %in% input$Regiones.Arima[1:2])
@@ -1313,7 +1322,7 @@ input.processing.arima <- reactive({
     
     if(input$Scope == 'Países') {
        req(input$Pais)
-       tb <- data %>% filter(NUTS == 0, na_item == input$Indicador.arima, unit == 'MIO_EUR', full_name %in% input$Pais[1:2])
+       tb <- data %>% filter(((NUTS == 0) | (full_name == 'Media UE')), na_item == input$Indicador.arima, unit == 'MIO_EUR', full_name %in% input$Pais[1:2])
     } else {
        req(input$Regiones.Arima)
        tb <- data %>% filter(NUTS == 2, na_item == input$Indicador.arima, unit == 'MIO_EUR', full_name %in% input$Regiones.Arima[1:2])
