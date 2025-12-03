@@ -335,12 +335,25 @@ En el caso específico de **España**, la literatura identifica una persistente 
 
 ## Motivación
 
+<br>
+
 Una de las principales motivaciones que me ha llevado a elegir un dataset de este tema es una aspiración que tengo de vivir o estudiar fuera de España, sobretodo por temas laborales entre otros y por calidad de vida. Yo considero que los aspectos económicos son un factor muy importante a tener en cuenta para esto, el poder comparar a España con otros países o incluso poder comparar España internamente para ver como es económicamente en distintos factores es algo que me ha impulsado a elegir este tema de trabajo. Además, las cuestiones económicas siempre me han llamado más la atención que cualquier otra.
 
 ## Objetivos
 
-<!-- Expresa de forma amplia y global el propósito principal del trabajo. Cuales son sus metas principales -->
+<br>
 
+El objetivo principal de este proyecto es realizar un análisis comparativo y evolutivo de indicadores económicos como la **renta neta disponible** de los hogares en Europa durante el periodo 2000-2022, trascendiendo los indicadores macroeconómicos nacionales para descender a un nivel regional (**NUTS 2**). Se busca evaluar la calidad de vida económica real, identificando patrones de convergencia o divergencia entre los estados miembros y dentro de España.
+
+Para alcanzar este propósito global, se establecen los siguientes objetivos específicos:
+
+* **Evaluar el posicionamiento de España en la UE:** Determinar la situación real del bienestar económico español en términos de poder adquisitivo (PPS) comparado con las potencias centrales (como Alemania o Benelux) y sus pares mediterráneos.
+
+* **Analizar la disparidad regional interna:** Cuantificar la brecha económica dentro de España, poniendo el foco en la situación de **Canarias** como región ultraperiférica frente a los polos económicos nacionales (Madrid, País Vasco y Navarra).
+
+* **Examinar la estructura de ingresos y gastos:** Comprender la relación entre la generación de riqueza (Ingreso Primario), la intervención del Estado (Presión Fiscal y Prestaciones) y la capacidad resultante de Ahorro de las familias.
+
+* **Modelar tendencias futuras:** Aplicar técnicas de predicción estadística (modelos ARIMA) para anticipar la evolución de la renta neta y la carga impositiva en el horizonte 2030, permitiendo vislumbrar si la brecha económica tiende a cerrarse o a perpetuarse.
 # Aportaciones del trabajo
 
 <!-- estas sección se suele escribir al final del trabajo --> 
@@ -428,6 +441,8 @@ El proyecto se apoya en un conjunto de librerías clave que han permitido transf
 * `openxlsx` y `googlesheets4`: Empleadas para la interoperabilidad con fuentes de datos externas. openxlsx ha permitido la ingesta de metadatos locales (relación con los ODS), mientras que googlesheets4 ha posibilitado la conexión en tiempo real con la hoja de cálculo de seguimiento del proyecto alojada en la nube.
 
 * `flexdashboard` y `shiny`: Estas librerías han sido la base para la construcción del producto final. `flexdashboard` ha permitido estructurar el análisis en un layout de cuadro de mandos (dashboard) responsivo, mientras que `shiny` ha inyectado la lógica reactiva necesaria (inputs dinámicos, renderizado condicional) para que los filtros y selectores controlen los gráficos en tiempo real.
+
+* `utilidades.r`: También es importante mencionar el script llamado `utilidades.r`, ya que a pesar de no ser una librería, ha permitido el uso de funciones que mejoran enormemente la facilidad y calidad del análisis, funciones tales como aquellas que hacen posible la creación de **mapas coropléticos, matrices de correlación o gráficos de predicciones animados con intervalos de confianza** entre otras.
 
 ### Servidor Shiny del DIS
 
@@ -605,11 +620,11 @@ Las observaciones (variables no categóricas) con valor numérico que aparecen e
 ```{r}
 # CÓDIGOS NUTS DE REGIONES REALES PRESENTES EN LOS MAPAS NUTS ACTUALES
 
-NUTS 0_codes <- c("EL", "ES", "FI", "FR", "HR", "HU", "IE", "IS", "AL", "AT", "BA", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "IT", "LI", "LT", "LU", "LV", "ME", "MK", "MT", "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK", "TR", "UA", "XK")
+NUTS0_codes <- c("EL", "ES", "FI", "FR", "HR", "HU", "IE", "IS", "AL", "AT", "BA", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "IT", "LI", "LT", "LU", "LV", "ME", "MK", "MT", "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK", "TR", "UA", "XK")
 
 NUTS1_codes <- c("DEA", "DEB", "DEC", "DED", "DEE", "DEF", "DEG", "DK0", "EE0", "EL3", "EL4", "EL5", "EL6", "ES1", "ES2", "ES3", "ES4", "ES5", "ES6", "ES7", "FI1", "AL0", "AT1", "AT2", "AT3", "BA0", "BE1", "BE2", "BE3", "BG3", "BG4", "CH0", "CY0", "CZ0", "DE1", "DE2", "DE3", "DE4", "DE5", "DE6", "DE7", "DE8", "DE9", "HR0", "HU1", "HU2", "HU3", "IE0", "IS0", "ITC", "ITF", "ITG", "ITH", "ITI", "LI0", "XK0", "LT0", "LU0", "LV0", "ME0", "MK0", "MT0", "NL1", "NL2", "NL3", "NL4", "NO0", "PL2", "PL4", "PL5", "PL6", "PL7", "PL8", "PL9", "PT1", "PT2", "PT3", "RO1", "RO2", "RO3", "RO4", "RS1", "RS2", "SE1", "SE2", "SE3", "SI0", "SK0", "TR1", "TR2", "TR3", "TR4", "TR5", "TR6", "TR7", "TR8", "TR9", "TRA", "TRB", "TRC", "FI2", "FR1", "FRB", "FRC", "FRD", "FRE", "FRF", "FRG", "FRH", "FRI", "FRJ", "FRK", "FRL", "FRM", "FRY")
 
-NUTS 2_codes <- c("DE12", "DE13", "DE14", "DE21", "DE22", "DE23", "DE24", "DE25", "DE26", "DE27", "DE30", "DE40", "DE50", "DE60", "DE71", "DE72", "DE73", "DE80", "DE91", "DE92", "DE93", "DE94", "DEA1", "DEA2", "DEA3", "DEA4", "DEA5", "DEB1", "DEB2", "DEB3", "DEC0", "DED2", "DED4", "DED5", "DEE0", "DEF0", "DEG0", "DK01", "AL01", "AL02", "AL03", "AT11", "AT12", "AT13", "AT21", "AT22", "AT31", "AT32", "AT33", "AT34", "BA01", "BA02", "BA03", "BE10", "BE21","BE22", "BE23", "BE24", "BE25", "BE31", "BE32", "BE33", "BE34", "BE35", "BG31", "BG32", "BG33", "BG34", "BG41", "BG42", "CH01", "CH02", "CH03", "CH04", "CH05", "CH06", "CH07", "CY00", "CZ01", "CZ02", "CZ03", "CZ04", "CZ05", "CZ06", "CZ07", "CZ08", "DE11", "MK00", "MT00", "NL11", "NL12", "NL13", "NL21", "NL22", "NL23", "NL32", "NL34", "NL35", "NL36", "NL41", "NL42", "NO02", "NO06", "NO07", "NO08", "NO09", "NO0A", "NO0B", "PL21", "PL22", "PL41", "PL42", "PL43", "PL51", "PL52", "PL61", "PL62", "PL63", "PL71", "PL72", "PL81", "PL82", "PL84", "PL91", "PL92", "PT11", "PT15", "PT19", "PT1A", "PT1B", "PT1C", "DK02", "DK03", "DK04", "DK05", "EE00", "EL30", "EL41", "EL42", "EL43", "EL51", "EL52", "EL53", "EL54", "EL61", "EL62", "EL63", "EL64", "EL65", "ES11", "ES12", "ES13", "ES21", "ES22", "ES23", "ES24", "ES30", "ES41", "ES42", "ES43", "ES51", "ES52", "ES53", "ES61", "ES62", "ES63", "ES64", "ES70", "FI19", "FI1B", "FI1C", "FI1D", "FI20", "FR10", "FRB0", "FRC1", "FRC2", "FRD1", "FRD2", "FRE1", "FRE2", "FRF1", "FRF2", "FRF3", "FRG0", "FRH0", "FRI1", "FRI2", "FRI3", "FRJ1", "FRJ2", "FRK1", "FRK2", "FRL0", "FRM0", "FRY1", "FRY2", "FRY3", "FRY4", "FRY5", "HR02", "HR03", "HR05", "HR06", "HU11", "HU12", "HU21", "HU22", "HU23", "HU31", "HU32", "HU33", "IE04", "IE05", "IE06", "IS00", "ITC1", "ITC2", "ITC3", "ITC4", "ITF1", "ITF2", "ITF3", "ITF4", "ITF5", "ITF6", "ITG1", "ITG2", "ITH1", "ITH2", "ITH3", "ITH4", "ITH5", "ITI1", "ITI2", "ITI3", "ITI4", "LI00", "LT01", "LT02", "LU00", "LV00", "ME00", "SE33", "SI03", "SI04", "SK01", "SK02", "SK03", "SK04", "TR10", "TR21", "TR22", "TR31", "TR32", "TR33", "TR41", "TR42", "TR51", "TR52", "TR61", "TR62", "TR63", "TR71", "TR72", "TR81", "TR82", "TR83", "TR90", "TRA1", "TRA2", "TRB1", "TRB2", "TRC1", "TRC2", "TRC3", "XK00", "PT1D", "PT20", "PT30", "RO11", "RO12", "RO21", "RO22", "RO31", "RO32", "RO41", "RO42", "RS11", "RS12", "RS21", "RS22", "SE11", "SE12", "SE21", "SE22", "SE23", "SE31", "SE32")
+NUTS2_codes <- c("DE12", "DE13", "DE14", "DE21", "DE22", "DE23", "DE24", "DE25", "DE26", "DE27", "DE30", "DE40", "DE50", "DE60", "DE71", "DE72", "DE73", "DE80", "DE91", "DE92", "DE93", "DE94", "DEA1", "DEA2", "DEA3", "DEA4", "DEA5", "DEB1", "DEB2", "DEB3", "DEC0", "DED2", "DED4", "DED5", "DEE0", "DEF0", "DEG0", "DK01", "AL01", "AL02", "AL03", "AT11", "AT12", "AT13", "AT21", "AT22", "AT31", "AT32", "AT33", "AT34", "BA01", "BA02", "BA03", "BE10", "BE21","BE22", "BE23", "BE24", "BE25", "BE31", "BE32", "BE33", "BE34", "BE35", "BG31", "BG32", "BG33", "BG34", "BG41", "BG42", "CH01", "CH02", "CH03", "CH04", "CH05", "CH06", "CH07", "CY00", "CZ01", "CZ02", "CZ03", "CZ04", "CZ05", "CZ06", "CZ07", "CZ08", "DE11", "MK00", "MT00", "NL11", "NL12", "NL13", "NL21", "NL22", "NL23", "NL32", "NL34", "NL35", "NL36", "NL41", "NL42", "NO02", "NO06", "NO07", "NO08", "NO09", "NO0A", "NO0B", "PL21", "PL22", "PL41", "PL42", "PL43", "PL51", "PL52", "PL61", "PL62", "PL63", "PL71", "PL72", "PL81", "PL82", "PL84", "PL91", "PL92", "PT11", "PT15", "PT19", "PT1A", "PT1B", "PT1C", "DK02", "DK03", "DK04", "DK05", "EE00", "EL30", "EL41", "EL42", "EL43", "EL51", "EL52", "EL53", "EL54", "EL61", "EL62", "EL63", "EL64", "EL65", "ES11", "ES12", "ES13", "ES21", "ES22", "ES23", "ES24", "ES30", "ES41", "ES42", "ES43", "ES51", "ES52", "ES53", "ES61", "ES62", "ES63", "ES64", "ES70", "FI19", "FI1B", "FI1C", "FI1D", "FI20", "FR10", "FRB0", "FRC1", "FRC2", "FRD1", "FRD2", "FRE1", "FRE2", "FRF1", "FRF2", "FRF3", "FRG0", "FRH0", "FRI1", "FRI2", "FRI3", "FRJ1", "FRJ2", "FRK1", "FRK2", "FRL0", "FRM0", "FRY1", "FRY2", "FRY3", "FRY4", "FRY5", "HR02", "HR03", "HR05", "HR06", "HU11", "HU12", "HU21", "HU22", "HU23", "HU31", "HU32", "HU33", "IE04", "IE05", "IE06", "IS00", "ITC1", "ITC2", "ITC3", "ITC4", "ITF1", "ITF2", "ITF3", "ITF4", "ITF5", "ITF6", "ITG1", "ITG2", "ITH1", "ITH2", "ITH3", "ITH4", "ITH5", "ITI1", "ITI2", "ITI3", "ITI4", "LI00", "LT01", "LT02", "LU00", "LV00", "ME00", "SE33", "SI03", "SI04", "SK01", "SK02", "SK03", "SK04", "TR10", "TR21", "TR22", "TR31", "TR32", "TR33", "TR41", "TR42", "TR51", "TR52", "TR61", "TR62", "TR63", "TR71", "TR72", "TR81", "TR82", "TR83", "TR90", "TRA1", "TRA2", "TRB1", "TRB2", "TRC1", "TRC2", "TRC3", "XK00", "PT1D", "PT20", "PT30", "RO11", "RO12", "RO21", "RO22", "RO31", "RO32", "RO41", "RO42", "RS11", "RS12", "RS21", "RS22", "SE11", "SE12", "SE21", "SE22", "SE23", "SE31", "SE32")
 
 NUTS3_codes <- c("AT333", "AT334", "AT335", "AT341", "AT342", "BE100", "BE211", "BE212", "BE213", "BE223", "BE224", "BE225", "BE231", "BE232", "BE233", "BE234", "BE235", "BE236", "BE241", "BE242", "BE251", "BE252", "BE253", "BE254", "BE255", "BE256", "BE257", "BE258", "BE310", "BE323", "BE328","BE329", "BE32A", "BE32B", "BE32C", "BE32D", "BE331", "BE332", "BE334", "BE335", "BE336", "BE341", "BE342", "BE343", "BE344", "BE345", "BE351", "BE352", "BE353", "BG311", "BG312", "BG313", "BG314", "BG315", "BG321", "BG322", "BG323", "BG324", "BG325", "BG331", "BG332", "BG333", "BG334", "BG341", "BG342", "BG343", "BG344", "BG411", "BG412", "BG413", "BG414", "BG415", "BG421", "BG422", "BG423", "BG424", "BG425", "CH011", "CH012", "CH013", "CH021", "CH022", "CH023", "CH024", "CH025", "CH031", "CH032", "CH033", "CH040", "CH051", "CH052", "CH053", "CH054", "CH055", "CH056", "CH057", "CH061", "CH062", "CH063", "CH064", "CH065", "CH066", "CH070", "CY000", "CZ010", "CZ020", "CZ031", "CZ032", "CZ041", "CZ042", "CZ051", "CZ052", "CZ053", "CZ063", "CZ064", "CZ071", "CZ072", "CZ080", "DE111", "DE112", "DE113", "DE114", "DE115", "DE116", "DE117", "DE118", "DE119", "DE11A", "DE11B", "DE11C", "DE11D", "DE121", "DE122", "DE123", "DE124", "DE125", "DE126", "DE127", "DE128", "DE129", "DE12A", "DE12B", "DE12C", "DE131", "DE132", "DE133", "DE134", "DE135", "DE136", "DE137", "DE138", "DE139", "DE13A", "DE141", "DE142", "DE143", "DE144", "DE145", "DE146", "DE147", "DE148", "DE149", "DE211", "DE212", "AL011", "AL012", "AL013", "AL014", "AL015", "AL021", "AL022", "AL031", "AL032", "AL033", "AL034", "AL035", "AT111", "AT112", "AT113", "AT121", "AT122", "AT123", "AT124", "AT125", "AT126", "AT127", "AT130", "AT211", "AT212", "AT213", "AT221", "AT222", "AT223", "AT224", "AT225", "AT226", "AT311", "AT312", "AT313", "AT314", "AT315", "AT321", "AT322", "AT323", "AT331", "AT332", "DE238", "DE239")
 
@@ -625,9 +640,9 @@ NUTS3_codes <-c(NUTS3_codes, "TR722", "TR723", "TR811", "TR812", "TR813", "TR821
 
 NUTS.computation <- function(s){
   if(substr(s,1,2) %in% c("EU","EA","EF","CC","OE","G2","G7"))  return(s)
-  if(nchar(s)==2 & s %in% NUTS 0_codes) return("0")
+  if(nchar(s)==2 & s %in% NUTS0_codes) return("0")
   if(nchar(s)==3 & s %in% NUTS1_codes) return("1")
-  if(nchar(s)==4 & s %in% NUTS 2_codes) return("2")
+  if(nchar(s)==4 & s %in% NUTS2_codes) return("2")
   if(nchar(s)==5 & s %in% NUTS3_codes) return("3")
   return("OTHERS")
 }
@@ -1273,7 +1288,7 @@ data.spain.box.plot <- data.spain.box %>%
     )
   ) +
   labs(
-    title = "Comparación de tipos de ingreso en regiones españolas",
+    title = "Comparación de tipos de ingreso en regiones españolas (2022)",
     subtitle = "Distribución del euro per cápita",
     x = "Tipo de ingreso",
     y = "€ por habitante",
@@ -1281,7 +1296,7 @@ data.spain.box.plot <- data.spain.box %>%
   ) +
   theme(
     plot.title = element_text(face = "bold", size = 13),
-    legend.position = "top",
+    legend.position = "none",
     axis.title.y = element_text(margin = margin(r = 15)), 
     axis.title.x = element_text(margin = margin(t = 15))) +
   theme_minimal() 
@@ -1458,7 +1473,7 @@ p_diferencia <- data.diff.paises %>%
       labels = scales::comma 
   ) +
   geom_hline(yintercept = 0, color = "black", linewidth = 0.8) + 
-  labs(title = "Efecto Neto de la Redistribución Fiscal",
+  labs(title = "Efecto Neto de la Redistribución Fiscal (2022)",
        x = "",
        y = "Países",
        fill = "Efecto Neto (€/Habitante)") +
@@ -1573,19 +1588,28 @@ geoj2.tb <- geoj2 %>%
 
 
 ```{r}
-mapa.NUTS 2.renta <- data %>% 
+mapa.NUTS2.renta <- data %>% 
   filter(NUTS == 2, na_item == "B6N", unit == "PPS_EU27_2020_HAB", TIME_PERIOD == max(TIME_PERIOD))  
 
-mapa.NUTS 2.renta.join <- geoj2.tb %>% 
-  left_join(mapa.NUTS 2.renta, by = "geo")
+mapa.NUTS2.renta.join <- geoj2.tb %>% 
+  left_join(mapa.NUTS2.renta, by = "geo") 
 
-etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
+# Quitar regiones NA
+
+indices_validos <- !is.na(mapa.NUTS2.renta.join$values)
+
+
+datos_filtrados <- mapa.NUTS2.renta.join[indices_validos, ]
+
+geoj2_filtrado <- geoj2[indices_validos, ]
+
+etiquetas <- paste( "<strong>", datos_filtrados$NUTS_NAME,
                    "</strong><br><strong>Valor: </strong>", 
-                   round(mapa.NUTS 2.renta.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
+                   round(datos_filtrados$values, 1), "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
 
-leyenda <- "Renta neta<br>disponible"
-MapaCoropléticoMemoria(geoj2, mapa.NUTS 2.renta.join$values, etiquetas, leyenda)
+leyenda <- "Renta neta<br>disponible (2022)"
+MapaCoropléticoMemoria(geoj2_filtrado, datos_filtrados$values, etiquetas, leyenda)
 ```
 <br>
 
@@ -1601,23 +1625,32 @@ De este primer mapa podemos sacar las siguientes conclusiones:
 
 <br>
 ```{r}
-mapa.NUTS 2.inversionactivos <- data %>% 
+mapa.NUTS2.inversionactivos <- data %>% 
   filter(NUTS == 2, na_item == "P51C", unit == "MIO_EUR", TIME_PERIOD == max(TIME_PERIOD)) %>% 
   left_join(poblacion, by = c('geo', 'TIME_PERIOD')) %>% 
   mutate(per.capita = (values * 1000000) / (poblacion * 1000)) %>% 
   select(-values) %>% 
   rename(values = per.capita)
 
-mapa.NUTS 2.inversionactivos.join <- geoj2.tb %>% 
-  left_join(mapa.NUTS 2.inversionactivos, by = "geo")
+mapa.NUTS2.inversionactivos.join <- geoj2.tb %>% 
+  left_join(mapa.NUTS2.inversionactivos, by = "geo") 
 
-etiquetas <- paste( "<strong>", geoj2.tb$NUTS_NAME,
+# Quitar las regiones NA
+
+indices_validos <- !is.na(mapa.NUTS2.inversionactivos.join$values)
+
+
+datos_filtrados <- mapa.NUTS2.inversionactivos.join[indices_validos, ]
+
+geoj2_filtrado <- geoj2[indices_validos, ]
+
+etiquetas <- paste( "<strong>", datos_filtrados$NUTS_NAME,
                    "</strong><br><strong>Valor: </strong>", 
-                   round(mapa.NUTS 2.inversionactivos.join$values, 1), "<strong>PPS/HAB</strong>") %>% 
+                     round(datos_filtrados$values, 1), "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
 
-leyenda <- "Inversión en<br>activos fijos"
-MapaCoropléticoMemoria(geoj2, mapa.NUTS 2.inversionactivos.join$values, etiquetas, leyenda)
+leyenda <- "Inversión en<br>activos fijos (2022)"
+MapaCoropléticoMemoria(geoj2_filtrado, datos_filtrados$values, etiquetas, leyenda)
 ```
 <br>
 
@@ -1643,6 +1676,7 @@ Al igual que en el anterior apartado, este análisis irá desde dentro de Españ
 
 Empezaremos el análisis visualizando una predicción hasta 2030 de la evolución de la renta neta en euros per cápita por las diferentes Comunidades Españolas. Para una mayor precisión filtraremos a partir del año 2002 ya que fue cuando se introdujo el euro a España.
 
+Para este caso concreto, vamos a utilizar un gráfico estático, esto se justifica ya que de la otra manera no aparecen los intervalos de confianza y son un elemento demasiado importante para suprimirlo.
 <br>
 ```{r}
 datats.renta.spain.comunidades <- data %>% 
@@ -1665,29 +1699,21 @@ datats.renta.spain.comunidades.arima <- datats.renta.spain.comunidades %>%
   
 ```
 
-```{r}
+```{r, fig.height=8}
 datats.renta.spain.comunidades.arima.pred <- datats.renta.spain.comunidades.arima %>% 
   forecast(h = 8) 
 
-p <- datats.renta.spain.comunidades.arima.pred %>% 
+datats.renta.spain.comunidades.arima.pred %>% 
   autoplot(datats.renta.spain.comunidades) + 
-  theme_bw(base_size = 10) +
+  theme_bw(base_size = 12) +
   facet_wrap(~Región,
              nrow = 4,           
              labeller = labeller(Región = label_wrap_gen(width = 15))) + 
   labs(x = "Año", y = "Renta neta (€/HAB)", title = "Evolución Renta Neta (Comunidades España)") +
  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position = "none") +
-  theme(
-    plot.margin = margin(t = 45, r = 10, b = 10, l = 10, unit = "pt"),
-    plot.title = element_text(face = "bold", margin = margin(b = 60)),
-    axis.title.y = element_text(margin = margin(r = 10)), 
-    axis.title.x = element_text(margin = margin(t = 15)),
-    strip.text = element_text(margin = margin(t = 13, r = 7, b = 10, l = 7)),
-    panel.spacing.x = unit(1, "lines"), 
-    panel.spacing.y = unit(2, "lines")) 
- 
-ggplotly(p, height = 900, tooltip = c("Año", "valores"))
+  theme(legend.position = "none") 
+
+
 
 ```
 
@@ -1774,14 +1800,15 @@ p <- tibble(
                           "<br>Varianza:", round(varPercent, 2), "%"))) +
     geom_bar(stat = "identity") +
     labs(x= "Componentes Principales", 
-          y= "Porcentaje varianza explicada"
+          y= "Porcentaje varianza explicada",
+         title = "Dispersión de los datos explicada por PCA (CC. AA España, 2022)"
     )+
    geom_text(aes(label=paste0(round(varPercent,digits = 1),"%")), 
                  size=3,
                  colour = "blue",
                  nudge_y = 1.
              ) + 
-   theme(legend.position = 'none')
+   theme(legend.position = 'none') 
 
 ggplotly(p, tooltip = 'text')
 ```
@@ -1799,7 +1826,27 @@ hchart(pca.comunidades.modelo, choices = c(1, 2)) %>%
  hc_tooltip(
  useHTML = TRUE,
  headerFormat = "{point.key}<br>"
- ) 
+ ) %>% 
+  hc_title(
+    text = "<b>Visualización PCA por comunidades de España (2022)</b>",
+    style = list(
+      fontFamily = "serif",
+      fontSize = "25px",
+      color = "#222222"
+    )
+  ) %>% 
+  hc_xAxis(
+    title = list(
+      text = "PC1",
+      style = list(fontFamily = "serif", fontWeight = "bold", fontSize = "17px", color = "#222222")
+    )
+  ) %>%
+  hc_yAxis(
+    title = list(
+      text = "PC2",
+      style = list(fontFamily = "serif", fontWeight = "bold", fontSize = "17px", color = "#222222")
+    )
+  )
 ```
 
 <br>
@@ -2008,13 +2055,13 @@ data.imp.yeoj <- data %>%
     geom_point() +
     theme(legend.position = "none") +
     geom_smooth(method = lm, se = FALSE) + 
-      labs(x = "Renta (€/HAB)",
+      labs(x = "Renta (yeojohnson) (€/HAB)",
            y = "Presión fiscal (€/HAB)") + 
       theme_bw(base_size = 14) + 
       labs(title = "Relación entre renta neta y Presión Fiscal por países (2022)") + 
       theme_bw(base_size = 12)
-
-  
+    
+    
   ggplotly(p, tooltip = c("Región", "Renta", "Impuestos"))
 ```
 
@@ -2094,7 +2141,19 @@ Todo este análisis realizado se encuentra desarrollado en mayor detalle en el *
 
 ## Evaluación
 
-<!-- desarrollo de esta fase -->
+<br>
+
+Haciendo referencia a algunos de los modelos matemáticos utilizados en el análisis de modelado, vamos a comentar brevemente según los resultados obtenidos, si estos modelos pueden ser una **representación fiable de la realidad.**
+
+En las **predicciones ARIMA**, para el caso de provincias de España, vemos intervalos de confianza que no son realmente grandes, podemos decir que el modelo ha tenido éxito y se ha ajustado bien proporcionando una **predicción fiable.**
+
+Con respecto a **España** como país, los intervalos para la **renta neta** y para los **impuestos pagados** son bastante más grandes. Esto no quiere decir que la predicción no sea fiable, simplemente hay más **incertidumbre** y probablemente la evolución de estas dos en el futuro venga dada por factores externos aunque en el intervalo de confianza es prácticamente ascendente.
+
+Por otro lado, tenemos el **análisis de componentes principales** y la **matriz de correlación** donde vemos que las variables poseen una **fuerte correlación en general** entre ellas salvo casos puntuales. Vemos que, con una única componente se puede explicar más del **60%** de la variación de los datos, siendo que con 3 de estas componentes explicamos más del **80%**, esto puede ser un indicador de que no es necesario tener tantas variables para explicar muchos de los hechos que hemos contemplado en el análisis de este proyecto.
+
+Por último, tenemos un diagrama de dispersión usando un **modelo de regresión lineal** y transformando la variable del eje y mediante **yeojohnson** en el que se aprecia una fuerte relación entre la **renta neta per cápita** y la **presión fiscal**, el modelo presenta un coeficiente **R2 de 0.88** que confirma lo que venimos comentando.  
+
+
 
 ## Despliegue
 
@@ -2104,14 +2163,15 @@ El despliegue de este proyecto se ha realizado a través de la **confección de 
 
 El cuadro de mandos del proyecto se ha llevado a cabo mediante el uso de las librerías `flexdashboard` y `shiny`, además de que puede verse publicamente gracias a que se encuentra alojado en un **servidor shiny del DIS.** Este cuadro de mandos se divide en 5 pestañas:
 
-* **Series temporales:** En esta pestaña se muestra todo lo relacionado con la **evolución de atributos** desde el año **2000 hasta 2022**, se puede ver la evolución tanto por **países** como por **regiones NUTS 2** de dichos países. En la pestaña se pueden seleccionar opciones tales como elegir la **unidad**, los países o regiones que se desean ver, activar la **escala del eje y libre**, el indicador o incluso se pueden seleccionar **todos los indicadores**, cuando esta opción es seleccionada, los inputs se actualizan de manera que solo se pueda escoger un país o región y ver los indicadores para dicho país o región. En general **todos los inputs son dinámicos** y cambian en función de lo que el dataset nos ofrece para asegurarnos de que siempre se muestra algo por pantalla, también se han utilizado **funciones reactivas** que permiten **normalizar** muchos de los atributos para convertirlos a **per cápita** y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en **euros por habitante**, siendo que por unidades **PPS per cápita** hay pocos datos disponibles.
+* **Series temporales:** En esta pestaña se muestra todo lo relacionado con la **evolución de atributos** desde el año **2000 hasta 2022**, se puede ver la evolución tanto por **países** como por **regiones NUTS 2** de dichos países. En la pestaña se pueden seleccionar opciones tales como elegir la **unidad**, los países o regiones que se desean ver, activar la **escala del eje y libre**, el indicador o incluso se pueden seleccionar **todos los indicadores**, cuando esta opción es seleccionada, los inputs se actualizan de manera que solo se pueda escoger un país o región y ver los indicadores para dicho país o región. En general **todos los inputs son dinámicos** y cambian en función de lo que el dataset nos ofrece para asegurarnos de que siempre se muestra algo por pantalla, también se han utilizado **funciones reactivas** que permiten **normalizar** muchos de los atributos para convertirlos a **per cápita** y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en **euros por habitante**, siendo que por unidades **PPS per cápita** hay pocos datos disponibles. 
+También hay un input que al marcarlo, automáticamente se seleccionan **todos los países o regiones de un país**. Se permite en países seleccionar a **Canarias** para poder ver el **aglomerado de la Unión Europea, España y Canarias** en una misma pestaña. Por otro lado cuando se van a seleccionar las regiones de un país, también se permite escoger el **aglomerado de la Unión Europea** para compararlo con las distintas regiones directamente.
 Se imprime una **tabla** en la parte inferior de los inputs como resultado del filtrado de dichos inputs para tener una manera distinta de visualizar los datos. Por último es importante saber que cuando se ve la evolución por **regiones** de un país la unidad obligatoria es la de **euros por habitante**, el primer motivo es por la falta de datos en comunidades que no son las Españolas, el segundo es que para ver la evolución dentro de un país, no tiene mucho sentido usar unidades PPS ya que no están comparando regiones con mucha diferencia en el nivel de vida.
 
 * **Atributos por año:** Esta pestaña está basada en **mapas coropléticos** en los que se puede filtrar por **país, región, indicador y año.** Al igual que en la primera pestaña, se han implementado **inputs dinámicos.** Por último, al igual que en la primera pestaña, también se han utilizado **funciones reactivas** que permiten **normalizar** muchos de los atributos para convertirlos a **per cápita** y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en **euros por habitante**, siendo que por unidades **PPS per cápita** hay pocos datos disponibles. Se imprime una **tabla** en la parte inferior de los inputs como resultado del filtrado de dichos inputs para tener una manera distinta de visualizar los datos.
 
 * **Comparación de atributos:** En esta pestaña se utiliza un **diagrama de dispersión** para ver **la relación entre dos variables económicas** en el cual se pueden seleccionar el año inicial a partir del cual se toman los datos y las dos variables a comparar por país o región de dicho país. A dichos atributos se les puede aplicar **transformaciones** tales como **raíz cuadrada, transformaciones logarítmicas o yeojohnson** que permiten mejorar el **modelo de regresión lineal**, dando resultados más fieles a la realidad. En este caso no se da la opción de elegir la unidad y todos los atributos se encuentran en **euros per cápita** ya que para **unidades PPS por habitante** apenas hay observaciones, al igual que en las demás pestañas se han tenido que **normalizar** muchos atributos para convertirlos en atributos per cápita. Se imprime una **tabla** con los resultados del filtrado de los inputs a la derecha como una manera distinta de ver los datos.
 
-* **Predicción con ARIMA:** En esta pestaña se utiliza un **modelo ARIMA** para hacer una **predicción** de un indicador económico a elegir, se permite elegir el **año** a partir del cual se empiezan a tomar los datos de la serie temporal, el **número de años** a predecir, los **parámetros** para el modelo ARIMA y un **máximo** de dos países o regiones de dichos países a elegir para visualizar a la vez. Como en todas las pestañas se han tenido que **normalizar** los atributos y cuando se elige ver la predicción por regiones se pierde la opción de seleccionar la unidad por los motivos explicados anteriormente (falta de datos y de sentido). Todos los inputs se adaptan con **dinamismo** de manera que solo se puede seleccionar lo que el dataset nos ofrece.
+* **Predicción con ARIMA:** En esta pestaña se utiliza un **modelo ARIMA** para hacer una **predicción** de un indicador económico a elegir, se permite elegir el **año** a partir del cual se empiezan a tomar los datos de la serie temporal, el **número de años** a predecir, los **parámetros** para el modelo ARIMA y un **máximo** de dos países o regiones de dichos países a elegir para visualizar a la vez. Como en todas las pestañas se han tenido que **normalizar** los atributos y cuando se elige ver la predicción por regiones se pierde la opción de seleccionar la unidad por los motivos explicados anteriormente (falta de datos y de sentido). Se permite en países seleccionar a **Canarias** para poder ver el **aglomerado de la Unión Europea, España y Canarias** en una misma pestaña. Por otro lado cuando se van a seleccionar las regiones de un país, también se permite escoger el **aglomerado de la Unión Europea** para compararlo con las distintas regiones directamente. Todos los inputs se adaptan con **dinamismo** de manera que solo se puede seleccionar lo que el dataset nos ofrece.
 
 * **Análisis de atributos:** Por último tenemos esta pestaña que nos permite analizar **todos los atributos** para los que hay observaciones en el dataset, en este caso lo hacemos a un nivel global, siendo que solo podemos elegir el año de las observaciones y si queremos filtrar por regiones **NUTS 0** (países) o regiones **NUTS 2** (comunidades). En función de lo seleccionado tenemos muchas subpestañas que cambian. La primera es una pestaña donde únicamente se ponen los atributos como columnas y se deja el nombre de la región para ver los valores de sus atributos, todos en **euros per cápita** y muchos **normalizados** ya que para las demás unidades aparecerían muy pocos indicadores y el análisis carecería de sentido, a parte de que lo que interesa ver en esta parte es simplemente la relación de las variables y ver cuanto podríamos **reducir la dimensionalidad** de dichas variables de manera que podamos explicar la mayor variación de los datos posible, así que la unidad no es relevante en principio. En segundo lugar vemos una **matriz de correlación** que nos indica que tan correlacionadas están esas variables por países, región o año (en función de los inputs elegidos). Las siguientes subpestañas se centran en **estandarizar los atributos** para poder compararlos y se calculan las **componentes principales**, siendo las últimas dos pestañas las encargadas mostrar que porcentaje de la **dispersión de los datos** explica cada componente y la **visualización** de dichas componentes.   
 
@@ -2161,7 +2221,7 @@ p <- SeguimientoActividadesProyecto%>%
      HORAS=round(sum(MINUTES)/60,digits = 1)
    )%>%
   mutate(ACTIVITY=factor(ACTIVITY,levels=actividades)) %>% 
-  ggplot(aes(ACTIVITY,HORAS, fill = ACTIVITY)) +
+  ggplot(aes(ACTIVITY,HORAS, fill = ACTIVITY, label = ACTIVITY)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label=HORAS),size=3,colour = "blue",nudge_y = 0.2)+ 
   theme_bw(base_size = 12) + 
@@ -2169,7 +2229,7 @@ p <- SeguimientoActividadesProyecto%>%
         legend.position = 'none') + 
   labs(x="",y="HORAS TRABAJADAS",title = "TOTAL HORAS TRABAJADAS EN EL PROYECTO POR ACTIVIDAD") 
 
-ggplotly(p)
+ggplotly(p, tooltip = c("label", "HORAS"))
   
  
 ```
@@ -2182,7 +2242,7 @@ p <- SeguimientoActividadesProyecto%>%
      HORAS=round(sum(MINUTES)/60,digits = 1)
    )%>%
   ungroup() %>% 
-  ggplot(aes(week,HORAS, fill = week)) +
+  ggplot(aes(week,HORAS)) +
   theme_bw(base_size = 12) +
   geom_bar(stat = "identity") +
   geom_text(aes(label=HORAS),size=3,colour = "blue",nudge_y = 0.2)+ 
