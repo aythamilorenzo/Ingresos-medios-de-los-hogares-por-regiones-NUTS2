@@ -138,6 +138,12 @@ pre, code {
   font-size: 0.95em;
 }
 
+p {
+
+text-align: justify;
+margin-bottom: 1em;
+}
+
 pre {
   padding: 16px;
   border-left: 4px solid #cbd5e0;
@@ -258,6 +264,31 @@ footer {
 
 }
 
+/* --- CONTENEDOR DE CADA CHUNK --- */
+.figure, .html-widget {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;          /* Ocupa el ancho total disponible del texto */
+}
+
+/* --- PARA FIGURAS (ggplot, png, etc.) --- */
+.figure img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;          /* Que no se salga del ancho del texto */
+    height: auto !important;  /* Mantiene proporción, no deforma */
+}
+
+/* --- PARA WIDGETS HTML (leaflet, plotly...) --- */
+.html-widget {
+    width: 100% !important;   /* Ocupa todo el contenedor */
+}
+
+.html-widget > div {
+    width: 100% !important;
+    height: auto;             /* Deja que RMarkdown/fig.height controle la altura */
+}
 
 </style>
 
@@ -317,11 +348,9 @@ El problema central que aborda este proyecto radica en que los promedios naciona
 
 ##  Estado actual
 
-<br>
-
 En el contexto de la economía regional europea, el análisis de la convergencia y la cohesión territorial ha estado tradicionalmente dominado por indicadores agregados a nivel nacional, como el Producto Interior Bruto (PIB). Sin embargo, existe un consenso creciente en la literatura económica y en instituciones como Eurostat sobre las limitaciones de estas métricas para reflejar el bienestar efectivo de la ciudadanía. El "estado del arte" actual se desplaza hacia el estudio de la **Renta Disponible de los Hogares** ajustada por el poder adquisitivo (PPS) y desagregada a niveles territoriales más finos, como el nivel **NUTS 2**, que es la unidad base para la aplicación de las políticas de desarrollo regional de la UE.
 
-### Justificación y Relevancia del Estudio
+#### Justificación y Relevancia del Estudio
 
 La realización de este estudio se justifica por la necesidad de superar la "ceguera de los promedios nacionales". Estudios precedentes han demostrado que, si bien puede existir convergencia entre países, las **disparidades intrarregionales** a menudo se mantienen o incluso se amplían, especialmente tras choques asimétricos como la crisis financiera de 2008 o la pandemia de COVID-19.
 
@@ -335,13 +364,11 @@ En el caso específico de **España**, la literatura identifica una persistente 
 
 ## Motivación
 
-<br>
+La elección de esta temática nace de una proyección personal y profesional orientada hacia el contexto internacional. La aspiración de desarrollar una futura carrera laboral o académica fuera de las fronteras nacionales exige una comprensión profunda y objetiva del entorno socioeconómico europeo. En este sentido, el análisis de datos no se plantea aquí solo como un ejercicio académico, sino como una herramienta fundamental para evaluar la calidad de vida real y las oportunidades estructurales que ofrecen los distintos países miembros, trascendiendo las percepciones generales para basar decisiones futuras en indicadores económicos sólidos.
 
-Una de las principales motivaciones que me ha llevado a elegir un dataset de este tema es una aspiración que tengo de vivir o estudiar fuera de España, sobretodo por temas laborales entre otros y por calidad de vida. Yo considero que los aspectos económicos son un factor muy importante a tener en cuenta para esto, el poder comparar a España con otros países o incluso poder comparar España internamente para ver como es económicamente en distintos factores es algo que me ha impulsado a elegir este tema de trabajo. Además, las cuestiones económicas siempre me han llamado más la atención que cualquier otra.
+Asimismo, este proyecto responde a un interés intrínseco por la economía y el análisis macroeconómico. La oportunidad de diseccionar la posición relativa de España frente a sus socios europeos, así como de investigar sus propias disparidades internas a nivel regional, constituye un desafío analítico estimulante. El objetivo último es transformar los datos brutos de Eurostat en conocimiento accionable que permita entender mejor las dinámicas de convergencia, riqueza y bienestar que definen el escenario económico actual.
 
 ## Objetivos
-
-<br>
 
 El objetivo principal de este proyecto es realizar un análisis comparativo y evolutivo de indicadores económicos como la **renta neta disponible** de los hogares en Europa durante el periodo 2000-2022, trascendiendo los indicadores macroeconómicos nacionales para descender a un nivel regional (**NUTS 2**). Se busca evaluar la calidad de vida económica real, identificando patrones de convergencia o divergencia entre los estados miembros y dentro de España.
 
@@ -356,11 +383,33 @@ Para alcanzar este propósito global, se establecen los siguientes objetivos esp
 * **Modelar tendencias futuras:** Aplicar técnicas de predicción estadística (modelos ARIMA) para anticipar la evolución de la renta neta y la carga impositiva en el horizonte 2030, permitiendo vislumbrar si la brecha económica tiende a cerrarse o a perpetuarse.
 # Aportaciones del trabajo
 
+# Aportaciones del trabajo
+
 <!-- estas sección se suele escribir al final del trabajo --> 
 
 ## Principales aportaciones
 
-<!-- Análisis del significado e implicaciones de los resultados en el contexto del área de estudio. Nuevas perspectivas o enfoques. Actualización del conocimiento existente. Debe estar alineado con los objetivos. Comentar cuadro de mandos como aportación  -->
+La realización de este proyecto ha permitido generar valor en tres dimensiones fundamentales: la tecnológica (herramienta), la metodológica (tratamiento del dato) y la analítica (conocimiento económico).
+
+#### 1. Democratización del Acceso a Datos Complejos (La Herramienta)
+
+Una de las aportaciones más tangibles es el desarrollo y despliegue de un **Cuadro de Mandos Interactivo (Dashboard).** Los datos de Eurostat, aunque públicos, suelen ser inaccesibles para el usuario no técnico debido a su estructura compleja y fragmentada.Este proyecto aporta una herramienta centralizada que permite a cualquier usuario —sin conocimientos de programación— explorar dinámicamente la realidad económica europea. La implementación de selectores jerárquicos (País $\to$ Región), la conversión automática de unidades y la visualización reactiva transforman una base de datos estática en un sistema de soporte a la decisión.
+
+#### 2. Visibilidad de la Disparidad Regional (El Enfoque NUTS 2)
+
+Frente a los estudios tradicionales que se limitan a comparar el PIB nacional, este trabajo aporta una **disección granular de la desigualdad.** Al descender al nivel NUTS 2, se ha evidenciado empíricamente que la "marca España" enmascara realidades económicas divergentes. El estudio aporta una cuantificación precisa de la brecha entre las regiones motoras (Madrid, País Vasco) y las regiones rezagadas, con especial énfasis en la situación de vulnerabilidad estructural de **Canarias.** Se ha demostrado que la convergencia regional no es automática y que la insularidad y la estructura productiva condicionan severamente la capacidad de ahorro y la renta disponible.
+
+#### 3. Modelado de la Estructura Económica (Validación Estadística)
+
+Desde una perspectiva analítica, el trabajo aporta evidencia estadística robusta sobre la estructura de los estados de bienestar europeos.
+
+* Mediante el **Análisis de Componentes Principales (PCA)**, se ha simplificado la complejidad económica, demostrando que la varianza entre regiones es unidimensional: la riqueza arrastra consigo todos los demás indicadores (inversión, ahorro, gasto).
+
+* A través de modelos de regresión, se ha desmitificado la presión fiscal, aportando la conclusión de que la carga impositiva en España es coherente con su nivel de renta, refutando la idea de una anomalía fiscal comparada con sus socios europeos.
+
+#### 4. Proyección de Escenarios Futuros (Anticipación)
+
+Finalmente, la aplicación de modelos **ARIMA** aporta una visión prospectiva que trasciende el análisis histórico. Se ofrece una estimación fundamentada de la evolución de la renta y la fiscalidad hasta 2030, identificando alertas tempranas de estancamiento en regiones específicas (como las Ciudades Autónomas) y proporcionando un marco de referencia cuantitativo para evaluar el éxito o fracaso de futuras políticas de cohesión.
 
 
 ## Alineamiento con los objetivos de desarrollo sostenible
@@ -406,21 +455,15 @@ tabla
 
 ## Herramientas empleadas
 
-<br>
-
 El desarrollo de este proyecto se ha sustentado en un ecosistema de herramientas de código abierto, seleccionadas por su robustez en el análisis estadístico, su capacidad de visualización y su flexibilidad para el desarrollo de aplicaciones web interactivas.
 
-### R y RStudio: El Núcleo del Análisis
-
-<br>
+#### R y RStudio: El Núcleo del Análisis
 
 Como lenguaje de programación principal se ha utilizado **R**, debido a su posición dominante en el ámbito de la estadística y la ciencia de datos. Su capacidad nativa para manejar grandes volúmenes de datos estructurados y su inmensa colección de paquetes especializados lo convierten en la elección óptima frente a otras alternativas.
 
 El entorno de desarrollo integrado (IDE) elegido ha sido **RStudio**. Su interfaz facilita la gestión simultánea de scripts, consolas, visualización de gráficos y control de entornos, lo cual ha sido crucial para iterar rápidamente en el análisis exploratorio y la depuración del código.
 
-### Librerías Principales
-
-<br>
+#### Librerías Principales
 
 El proyecto se apoya en un conjunto de librerías clave que han permitido transformar los datos brutos en conocimiento visualizable:
 
@@ -444,9 +487,7 @@ El proyecto se apoya en un conjunto de librerías clave que han permitido transf
 
 * `utilidades.r`: También es importante mencionar el script llamado `utilidades.r`, ya que a pesar de no ser una librería, ha permitido el uso de funciones que mejoran enormemente la facilidad y calidad del análisis, funciones tales como aquellas que hacen posible la creación de **mapas coropléticos, matrices de correlación o gráficos de predicciones animados con intervalos de confianza** entre otras.
 
-### Servidor Shiny del DIS
-
-<br>
+#### Servidor Shiny del DIS
 
 Para la difusión y acceso público del cuadro de mandos, se ha optado por el despliegue en el servidor **Shiny del Departamento de Informática y Sistemas (DIS).** Esta infraestructura permite alojar la aplicación de manera estable, asegurando que el procesamiento reactivo de los datos (como los modelos ARIMA o los filtros dinámicos de regiones) se ejecute en el servidor y se sirva al usuario final a través de cualquier navegador web. 
 
@@ -504,9 +545,15 @@ El análisis de lo datos realizado para la validación del tema del proyecto per
 
 ## Comprensión del negocio
 
-Para la búsqueda de datos, lo que se ha hecho es buscar directamente en la lista de datasets de Eurostat, en primer lugar había encontrado un dataset interesante pero este prácticamente hacía imposible la combinación de atributos además de tener inexistentes o pocos datos para España y Canarias, finalmente encontré el dataset con el que he trabajado y en este caso apenas he tenido incidencias o dificultades.
+El proceso de búsqueda de información se centró exclusivamente en el repositorio oficial de **Eurostat**, dada su fiabilidad y estandarización para comparativas a nivel europeo. La selección de los conjuntos de datos finales fue el resultado de un proceso iterativo de evaluación y filtrado:
 
-Para la búsqueda del segundo dataset han existido mas problemas ya que principalmente teníamos un dataset de población y sumábamos por grupos para concentrar a la poblacion entre 15 y 65 años y de esta manera normalizar los valores de los atributos, sin embargo, este dataset tenía problemas ya que los valores eran observaciones tomadas el 1 de enero de cada año, esto hacía que los resultados fueran valores lejanos de la realidad. El problema es que normalmente para calcular datos económicos per cápita no se suele separar por grupos y lo que se hace es tomar datos de poblaciones que representen la media de la población en un año, dicho esto, tuve que buscar otro dataset que contaba con estas característica y que proporcionaba valores mucho más exactos.
+* **Dataset Económico Principal:** Inicialmente, se exploraron diversos candidatos para la obtención de los indicadores de renta. Se descartó una primera opción preliminar debido a la **alta escasez de datos (sparsity)** y a la falta de cobertura histórica consistente para las regiones objetivo del estudio, específicamente para España y la región NUTS 2 de Canarias. Esto obligó a realizar una búsqueda más exhaustiva hasta localizar el conjunto de datos actual (`nama_10r_2hhinc`), que garantiza la granularidad y completitud necesarias para el análisis cruzado de indicadores.
+
+* **Dataset Demográfico Auxiliar:** Un desafío metodológico crítico surgió en la selección de los datos de población necesarios para la normalización de los indicadores (cálculo de valores per cápita).
+
+  * *Problemática:* Inicialmente, se consideró utilizar un dataset demográfico basado en recuentos censales a fecha fija (**1 de enero**) y segmentado por grupos de edad (población en edad laboral). Sin embargo, se identificó que este enfoque introducía un sesgo en los cálculos económicos, ya que no capturaba las variaciones demográficas ocurridas durante el año.
+
+  * *Solución:* Siguiendo los estándares de las Cuentas Nacionales, se determinó que la métrica correcta debía ser la **Población Media Anual.** En consecuencia, se descartó la primera fuente y se localizó e integró un segundo dataset específico (`nama_10r_3popgdp`) que proporciona esta media exacta, asegurando así que los indicadores de renta y presión fiscal per cápita reflejen fielmente la realidad económica del periodo estudiado.
 
 ## Comprensión de los datos
 
@@ -942,11 +989,10 @@ str(data)
 
 ## Preparación de los datos
 
-### Procesado del dataset
+### Procesado de los datos
 
-<br>
+El proceso de preparación de los datos comienza con la carga e ingesta del conjunto de datos principal. En esta primera etapa, se realiza una conversión de la variable temporal `TIME_PERIOD` al formato de fecha estándar para asegurar su correcta interpretación, procediendo posteriormente a la ordenación de los registros según el criterio temporal y geográfico (`geo`).
 
-Empezamos cargando nuestro dataset, pasamos la variable `TIME_PERIOD` a tipo 'date' y ordenamos por dicha variable y por `geo`.
 ```{r}
 # dataset.name <- "nama_10r_2hhinc"
 # data <- get_eurostat(dataset.name, time_format = 'date') %>%
@@ -960,7 +1006,11 @@ data <- read.csv("nama_10r_2hhinc.csv") %>%
 
 ```
 
-Ahora, vamos a convertir `TIME_PERIOD` para que **únicamente nos aparezca el año**, quitando el día y el mes y además vamos a filtrar para que solo aparezcan los años **desde el 2000 hasta el 2022**, ya que son los años en los que hay más observaciones. Luego, como solo tenemos códigos de cada región y no sus nombres, vamos a añadirle una tabla que nos proporciona **todos los nombres y su información de NUTS** a partir de su código `geo`. 
+A continuación, se ejecutan transformaciones estructurales para delimitar el alcance del estudio y enriquecer la información disponible. En primer lugar, se extrae el año de la variable temporal, filtrando el dataset al intervalo comprendido entre los años **2000 y 2022,** periodo que garantiza la mayor consistencia y volumen de observaciones.
+
+Paralelamente, dado que los datos originales identifican las regiones únicamente mediante códigos, se realiza un cruce (join) con una tabla de metadatos NUTS. Esto permite enriquecer el dataset incorporando los nombres descriptivos y la jerarquía territorial correspondiente a cada código `geo`.
+
+Finalmente, se realiza una limpieza de variables redundantes o sin varianza. Específicamente, se elimina la columna `freq`, ya que contiene un valor constante ('A') para todos los registros, aportando información redundante sobre la periodicidad anual de la serie.
 ```{r carga_dataset}
 data <- data %>%
   mutate(TIME_PERIOD = as.numeric(format(TIME_PERIOD, "%Y"))) %>%
@@ -971,11 +1021,15 @@ NUTS <- read_csv('http://ctim.es/AEDV/data/eurostac_real_nuts.csv')%>%
 
 data <- data %>%
   left_join(NUTS, by = 'geo') %>%
-  relocate(full_name, freq, unit, direct, na_item, geo, TIME_PERIOD, values, .after = data$NUTS)
+  relocate(full_name, freq, unit, direct, na_item, geo, TIME_PERIOD, values, .after = data$NUTS) %>% 
+  select(-freq)
   
 ```
 
-A continuación vamos a cargar un dataset de población que toma como población **la media de cada año**, esto es lo más correcto para normalizar datos económicos para los que no se tienen datos per cápita como sucede en nuestro caso para muchos indicadores. En cada caso que lo necesitemos, simplemente uniremos esta tabla a otra filtrada con los paises o provincias que queramos por la columna `geo` y `TIME_PERIOD` y normalizaremos los valores necesarios. Le cambiamos el nombre a la  columna `values` por `poblacion` para evitar confusiones. Eliminamos las columnas de `freq` y `unit` ya que solo tienen un valor y no nos sirven de nada, por último cambiamos el formato de fecha para que aparezca únicamente el año y lo pasamos a dato numérico.
+
+Por otro lado, para garantizar la comparabilidad económica entre regiones de distinta demografía, es necesario normalizar ciertos indicadores absolutos a valores relativos (per cápita). Para ello, se incorpora un **dataset auxiliar de población** (`nama_10r_3popgdp`). Se ha seleccionado específicamente este conjunto de datos porque registra la **población media anual,** métrica estándar y más precisa para cálculos económicos que los censos a fecha fija (1 de enero).
+
+Este dataset secundario se somete a un preprocesado para hacerlo compatible con el principal: se estandariza la variable temporal al año numérico, se eliminan columnas de metadatos innecesarias (`freq`, `unit`) y se renombra la variable de interés a `poblacion`. Esto facilitará su posterior fusión (left join) con el dataset económico utilizando las claves `geo` y `TIME_PERIOD` cuando sea necesario realizar normalizaciones.
 ```{r}
 poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>% 
   as_tibble() %>% 
@@ -986,9 +1040,7 @@ poblacion <- get_eurostat("nama_10r_3popgdp", time_format = 'date') %>%
 
 ### Análisis gráfico
 
-<br>
-
-Para este apartado y el siguiente, procederemos a hacer un breve análisis que va **desde dentro de España hacia afuera**, terminando con una visión general sobre algunos datos. Cuando analicemos las comunidades de España usaremos **euros per cápita**, ya que las unidades PPS se utilizan para hacer comparaciones de regiones diferentes donde el precio de la vida bastante diferente.
+Para este apartado y el siguiente, procederemos a hacer un breve análisis que va **desde dentro de España hacia afuera**, terminando con una visión general sobre algunos datos. Cuando analicemos las comunidades de España usaremos **euros per cápita**, ya que las unidades PPS se utilizan para hacer comparaciones de regiones diferentes donde el precio de la vida es bastante diferente. Cabe destacar que **Canarias** estará presente durante todo el análisis, ya que cuando el análisis se realiza por países también se incluye para una mejor comparación.
 
 Para empezar, comenzamos viendo la evolución de uno de los indicadores económicos más importante a nivel de bienestar de la población por comunidades de España, la **renta neta en euros per cápita.**
 
@@ -1073,7 +1125,7 @@ data.ahorro.es.plot <- data.ahorro.es %>%
     legend.position = 'none'
   ) +
   labs(
-    title = "Nivel de Ahorro Neto por comunidad (España)",
+    title = "Nivel de Ahorro Neto por comunidad (España, 2022)",
     x = NULL,
     y = "Ahorro Neto (€/Habitante)"
   ) + 
@@ -1084,7 +1136,7 @@ ggplotly(data.ahorro.es.plot, tooltip = "text")
 
 <br>
 
-En general, los países que mejor **renta neta per cápita** presentaban son los que se encuentran más arriba en esta gráfica, como vemos, **Canarias** se sitúa bastante abajo en estos términos.
+En general, las comunidades autónomas que mejor **renta neta per cápita** presentaban son los que se encuentran más arriba en esta gráfica, como vemos, **Canarias** se sitúa bastante abajo en estos términos.
 
 <br>
 <hr>
@@ -1125,7 +1177,7 @@ ggplot(aes(x = B6N,
         axis.title.y = element_text(margin = margin(r = 10)))
 
 ggplotly(data.spain.disp.plot, tooltip = "text") %>% 
-    animation_opts(frame = 200)
+    animation_opts(frame = 150)
 
 ```
 
@@ -1179,7 +1231,7 @@ data.spain.pie %>%
     hoverinfo = "text") %>% 
   add_pie(hole = 0.4) %>% 
   layout(
-    title = list(text = "Distribución de la Renta Neta por Regiones de España")
+    title = list(text = "Distribución de la Renta Neta por Regiones de España (2022)")
   )
 
 
@@ -1194,7 +1246,7 @@ Tras analizar la gráfica de disco, vemos que efectivamente las regiones del sur
 <hr>
 <br>
 
-Ya que conocemos bien la renta neta que presenta cada comunidad en España, echemos un vistazo ahora a los **impuestos sobre renta y patrimonio** que se pagan en cada una, medidos en euros por habitante y representados mediante un mapa de calor. Tenemos datos desde el año 2016 hasta el 2022.
+Ya que conocemos bien la renta neta que presenta cada comunidad en España, echemos un vistazo ahora a los **impuestos sobre renta y patrimonio** que se pagan en cada una, medidos en euros por habitante y representados mediante un mapa de calor. Tomaremos datos desde el año 2016 hasta el 2022.
 
 <br>
 
@@ -1217,14 +1269,7 @@ data.imp.comunidades.plot <- data.imp.comunidades %>%
                           "<br>Región: ", full_name,
                           "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
   geom_tile(color = "grey80") +
-  scale_fill_gradient2(
-    low = "#1A476F",      
-    mid = "#87CEEB",      
-    high = "#1A476F",      
-    midpoint = 0,          
-    space = "Lab",         
-    name = "Impuestos"      
-) + 
+  scale_fill_gradient(low = "white", high = "steelblue") + 
   labs(title="Impuestos sobre renta y patrimonio pagados (2016-2022)",
        x="Año",
        y="Comunidades (España)",
@@ -1242,7 +1287,7 @@ El mapa de calor de **Impuestos sobre Renta y Patrimonio** per cápita entre 201
 
 **Riqueza como Causa**: Regiones como la Comunidad de Madrid, el País Vasco y Navarra muestran la mayor presión fiscal directa (azul intenso). Esto se debe a que su Renta Disponible Neta es históricamente más alta, lo que automáticamente eleva el pago del IRPF debido a su naturaleza progresiva. El alto nivel de impuestos es el resultado de una base imponible (ingresos) superior.
 
-**Doble Medición del Impuesto**: La variación en D.5 también subraya que no solo mide la renta generada en el año:
+**Doble Medición del Impuesto**: La variación en el impuesto también subraya que no solo mide la renta generada en el año:
 
   * El IRPF refleja los ingresos corrientes.
 
@@ -1344,11 +1389,13 @@ data.canarias.mediaue.renta.PPS <- data %>%
 data.top.renta.PPS <- data %>% 
   filter(na_item == 'B6N', unit == 'PPS_EU27_2020_HAB', NUTS == 0, full_name %in% data.top.rentaPPS.pareto$full_name) 
 
-data.topPPS.plot <- rbind(data.top.renta.PPS, data.canarias.mediaue.renta.PPS) %>% arrange(desc(values))
+
+data.topPPS.plot <- rbind(data.top.renta.PPS, data.canarias.mediaue.renta.PPS) %>% 
+  
+  mutate(full_name = forcats::fct_relevel(full_name, "Spain", "Media UE", "Canarias", after = Inf))
 
 
-
-data.topPPS.plot <- data.topPPS.plot %>% 
+p <- data.topPPS.plot %>% 
   ggplot(aes(x = full_name, 
              y = values,
              fill = full_name)) +
@@ -1357,12 +1404,13 @@ data.topPPS.plot <- data.topPPS.plot %>%
   coord_flip() +
   theme_bw(base_size = 10) +
   theme(legend.position = "none",
-    axis.title.x = element_text(margin = margin(t = 10)),
-    axis.title.y = element_text(margin = margin(r = 15))) +
-  labs(title = "Evolución de la Renta Neta por países| Año: {current_frame}") +
+        axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_text(margin = margin(r = 15))) +
+  labs(title = "Evolución de la Renta Neta por países | Año: {current_frame}") +
   transition_manual(TIME_PERIOD)
-  
-animate(data.topPPS.plot, fps = 2, end_pause = 10)
+
+
+animate(p, fps = 2, end_pause = 10)
 ```
 
 <br>
@@ -1385,7 +1433,7 @@ La alta renta alemana se sustenta en su potente base industrial y manufacturera.
 <hr>
 <br>
 
-Continuémos viendo la evolución económica de los países, en este caso vamos a echar un vistazo a la **evolución del ingreso primario neto**, es decir, los ingresos brutos per cápita de cada país medidos en unidades PPS. Dado que Europa tiene muchos países, en este caso mostraremos los países más interesantes a comparar con España.
+Continuemos viendo la evolución económica de los países, en este caso vamos a echar un vistazo a la **evolución del ingreso primario neto**, es decir, los ingresos brutos per cápita de cada país medidos en unidades PPS. Dado que Europa tiene muchos países, en este caso mostraremos los países más interesantes a comparar con España.
 
 Ilustraremos esto con un gráfico de líneas.
 
@@ -1493,7 +1541,7 @@ El resultado evidencia que las economías se dividen en dos grandes grupos:
 
 * **Pagadores Netos (Contribuyentes):** Los países del Norte y Centro de Europa (Dinamarca, Países Bajos, Luxemburgo y Alemania) son los mayores contribuyentes netos, con un hogar promedio que cede entre 8.000€ y 10.000€ al Estado después de impuestos y transferencias. Esta fuerte presión fiscal refleja la financiación de robustos Estados de Bienestar y la alta recaudación.
 
-* **Receptores Netos (Asistencia):** En contraste, las economías del Sur y del Este de Europa (incluyendo Grecia, Polonia, Portugal, y Eslovaquia) se sitúan cerca del valor cero o son receptores netos, lo que indica que las prestaciones y transferencias sociales que reciben sus hogares son casi iguales o superiores a los impuestos que pagan.
+* **Receptores Netos (Asistencia):** En contraste, las economías del Sur y del Este de Europa (incluyendo Grecia, Polonia, Portugal, Chipre y Bulgaria) se sitúan cerca del valor cero o son receptores netos, lo que indica que las prestaciones y transferencias sociales que reciben sus hogares son casi iguales o superiores a los impuestos que pagan.
 
 **España** se sitúa como un contribuyente neto moderado, lejos de las cifras de cabeza, pero todavía con una contribución positiva, mientras que las regiones periféricas y más débiles (como Canarias en la lista) son, en esencia, fiscalmente neutrales.
 
@@ -1534,14 +1582,7 @@ data.imp.plot <- data.imp %>%
                           "<br>Región: ", full_name,
                           "<br>Valores: ", round(Impuestos.pagados,1), "€/HAB"))) +
   geom_tile(color = "black", linewidth = 0.5) +
-  scale_fill_gradient2(
-    low = "#1A476F",      
-    mid = "#87CEEB",      
-    high = "#1A476F",      
-    midpoint = 0,          
-    space = "Lab",         
-    name = "Presión fiscal (€/Habitante)"      
-) + 
+  scale_fill_gradient(low = "white", high = "steelblue") + 
   labs(title="Presión Fiscal Directa sobre la Renta (2016-2022)",
        x="Año",
        y="Países") + 
@@ -1566,7 +1607,7 @@ El dato curioso es que esta visualización confirma que los países con la mayor
 
 Hemos analizado la presión fiscal directa sobre el ingreso de los hogares, que es el coste necesario para financiar los sistemas de bienestar y Cotizaciones. Ahora, es el momento de examinar el resultado final de esa riqueza generada y la capacidad de inversión.
 
-Por último, cerramos el apartado con una visión geográfica y detallada del último año de datos (2022). Usaremos dos mapas coropléticos a nivel de regiones NUTS 2 para ver cómo se distribuyen la **Renta Disponible Neta** y la **Inversión en Activos Fijos,** lo que nos permitirá extraer conclusiones específicas sobre los focos geográficos de mayor riqueza y dinamismo económico en Europa, utilizaremos unidades PPS para el caso de la Renta Neta y euros por habitante para el caso de la Inversión en Activos Fijos, ya que no tenemos datos con unidades PPS.
+Por último, cerramos el apartado con una visión geográfica y detallada del último año de datos (2022). Usaremos dos mapas coropléticos a nivel de regiones NUTS 2 para ver cómo se distribuyen la **Renta Disponible Neta** y la **Inversión en Activos Fijos,** lo que nos permitirá extraer conclusiones específicas sobre los focos geográficos de mayor riqueza y dinamismo económico en Europa, utilizaremos unidades PPS para el caso de la Renta Neta y euros por habitante para el caso de la Inversión en Activos Fijos, ya que no tenemos datos con unidades PPS. Filtraremos los mapas de manera que solo nos aparezcan las regiones para las que hay valores.
 
 <br>
 
@@ -1709,7 +1750,7 @@ datats.renta.spain.comunidades.arima.pred %>%
   facet_wrap(~Región,
              nrow = 4,           
              labeller = labeller(Región = label_wrap_gen(width = 15))) + 
-  labs(x = "Año", y = "Renta neta (€/HAB)", title = "Evolución Renta Neta (Comunidades España)") +
+  labs(x = "Año", y = "Renta neta (€/HAB)", title = "Predicción de la evolución de la Renta Neta (Comunidades España)") +
  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position = "none") 
 
@@ -1866,7 +1907,7 @@ La proyección de las comunidades en el plano definido por el PC1 (Eje X: Tamañ
 <hr>
 <br>
 
-Después de este breve análisis, vamos a pasar a analizar España como país conjunto.
+Después de este breve análisis, vamos a pasar a analizar **España** como país conjunto.
 
 Para empezar vamos a ver una predicción hasta 2030 de la evolución de la **renta neta per cápita** en España. En este caso también veremos una **descomposición STL** de la serie temporal a la que aplicamos el modelo ARIMA. Para una mayor precisión filtraremos a partir del año 2002 ya que fue cuando se introdujo el euro a España.
 
@@ -2141,52 +2182,126 @@ Todo este análisis realizado se encuentra desarrollado en mayor detalle en el *
 
 ## Evaluación
 
-<br>
+En esta fase, evaluamos la robustez y la capacidad explicativa de los modelos matemáticos aplicados durante la fase de modelado, determinando si los resultados obtenidos constituyen una representación fiel de la realidad económica analizada.
 
-Haciendo referencia a algunos de los modelos matemáticos utilizados en el análisis de modelado, vamos a comentar brevemente según los resultados obtenidos, si estos modelos pueden ser una **representación fiable de la realidad.**
+#### Validación de Modelos Predictivos (ARIMA)
 
-En las **predicciones ARIMA**, para el caso de provincias de España, vemos intervalos de confianza que no son realmente grandes, podemos decir que el modelo ha tenido éxito y se ha ajustado bien proporcionando una **predicción fiable.**
+En lo referente a las **proyecciones regionales**, los modelos ARIMA aplicados a las Comunidades Autónomas han demostrado un desempeño notable. La estrechez de los intervalos de confianza observados sugiere una baja volatilidad en los residuos y un ajuste preciso a la tendencia histórica, lo que nos permite calificar estas predicciones a corto y medio plazo como **altamente fiables** y robustas.
 
-Con respecto a **España** como país, los intervalos para la **renta neta** y para los **impuestos pagados** son bastante más grandes. Esto no quiere decir que la predicción no sea fiable, simplemente hay más **incertidumbre** y probablemente la evolución de estas dos en el futuro venga dada por factores externos aunque en el intervalo de confianza es prácticamente ascendente.
-
-Por otro lado, tenemos el **análisis de componentes principales** y la **matriz de correlación** donde vemos que las variables poseen una **fuerte correlación en general** entre ellas salvo casos puntuales. Vemos que, con una única componente se puede explicar más del **60%** de la variación de los datos, siendo que con 3 de estas componentes explicamos más del **80%**, esto puede ser un indicador de que no es necesario tener tantas variables para explicar muchos de los hechos que hemos contemplado en el análisis de este proyecto.
-
-Por último, tenemos un diagrama de dispersión usando un **modelo de regresión lineal** y transformando la variable del eje y mediante **yeojohnson** en el que se aprecia una fuerte relación entre la **renta neta per cápita** y la **presión fiscal**, el modelo presenta un coeficiente **R2 de 0.88** que confirma lo que venimos comentando.  
+Por el contrario, en el modelo agregado para **España** a nivel nacional, observamos un ensanchamiento significativo de los intervalos de confianza. Este fenómeno no invalida la utilidad del modelo, sino que refleja una mayor **incertidumbre inherente** a las variables macroeconómicas agregadas, las cuales son más sensibles a choques externos y coyunturas globales. A pesar de esta mayor horquilla de probabilidad, la tendencia central se mantiene consistentemente ascendente, validando la hipótesis de recuperación estructural.
 
 
+#### Análisis Multivariante y Reducción de Dimensionalidad
+
+Los resultados obtenidos mediante la **Matriz de Correlación** y el **Análisis de Componentes Principales (PCA)** confirman la existencia de una fuerte estructura de dependencia lineal entre las variables económicas estudiadas.
+
+El hecho de que el **primer componente principal (PC1)** sea capaz de capturar por sí solo más del **60% de la varianza total**, y que los tres primeros componentes expliquen conjuntamente más del **80%**, evidencia una alta redundancia en los datos originales. Esto valida la hipótesis de que la complejidad económica de las regiones puede reducirse eficazmente a unas pocas dimensiones latentes (principalmente relacionadas con el tamaño de la economía y el bienestar), simplificando la interpretación sin pérdida significativa de información.
+
+#### Modelado de Relaciones (Regresión Lineal)
+
+Finalmente, la evaluación del modelo de regresión lineal entre la **Renta Neta per Cápita** y la **Presión Fiscal** (tras la aplicación de la transformación Yeo-Johnson para corregir la asimetría) arroja resultados concluyentes. El coeficiente de determinación obtenido ($R^2 = 0.88$) indica una **bondad de ajuste excelente**, confirmando estadísticamente que la presión fiscal es una función directa y predecible de la renta disponible en el contexto europeo. Este alto nivel de correlación refuerza la solidez de las conclusiones extraídas sobre la estructura fiscal de los países analizados.
 
 ## Despliegue
 
-<br>
+La fase de despliegue se materializa a través de la elaboración de la presente memoria técnica y el desarrollo de un **Cuadro de Mandos Interactivo (Dashboard)**. Esta herramienta ha sido construida utilizando las librerías `flexdashboard` y `shiny` en R, y se encuentra desplegada públicamente en el **servidor Shiny del Departamento de Informática y Sistemas (DIS)**, garantizando su accesibilidad.
 
-El despliegue de este proyecto se ha realizado a través de la **confección de esta memoria y de un cuadro de mandos.**
+El cuadro de mandos se estructura en cinco pestañas temáticas, diseñadas para cubrir desde el análisis exploratorio hasta la modelización predictiva:
 
-El cuadro de mandos del proyecto se ha llevado a cabo mediante el uso de las librerías `flexdashboard` y `shiny`, además de que puede verse publicamente gracias a que se encuentra alojado en un **servidor shiny del DIS.** Este cuadro de mandos se divide en 5 pestañas:
+* **Series Temporales:** Esta sección permite visualizar la evolución de los indicadores económicos en el periodo **2000-2022**, ofreciendo un análisis comparativo tanto a nivel de país (NUTS 0) como regional (NUTS 2). La interfaz es altamente reactiva:
 
-* **Series temporales:** En esta pestaña se muestra todo lo relacionado con la **evolución de atributos** desde el año **2000 hasta 2022**, se puede ver la evolución tanto por **países** como por **regiones NUTS 2** de dichos países. En la pestaña se pueden seleccionar opciones tales como elegir la **unidad**, los países o regiones que se desean ver, activar la **escala del eje y libre**, el indicador o incluso se pueden seleccionar **todos los indicadores**, cuando esta opción es seleccionada, los inputs se actualizan de manera que solo se pueda escoger un país o región y ver los indicadores para dicho país o región. En general **todos los inputs son dinámicos** y cambian en función de lo que el dataset nos ofrece para asegurarnos de que siempre se muestra algo por pantalla, también se han utilizado **funciones reactivas** que permiten **normalizar** muchos de los atributos para convertirlos a **per cápita** y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en **euros por habitante**, siendo que por unidades **PPS per cápita** hay pocos datos disponibles. 
-También hay un input que al marcarlo, automáticamente se seleccionan **todos los países o regiones de un país**. Se permite en países seleccionar a **Canarias** para poder ver el **aglomerado de la Unión Europea, España y Canarias** en una misma pestaña. Por otro lado cuando se van a seleccionar las regiones de un país, también se permite escoger el **aglomerado de la Unión Europea** para compararlo con las distintas regiones directamente.
-Se imprime una **tabla** en la parte inferior de los inputs como resultado del filtrado de dichos inputs para tener una manera distinta de visualizar los datos. Por último es importante saber que cuando se ve la evolución por **regiones** de un país la unidad obligatoria es la de **euros por habitante**, el primer motivo es por la falta de datos en comunidades que no son las Españolas, el segundo es que para ver la evolución dentro de un país, no tiene mucho sentido usar unidades PPS ya que no están comparando regiones con mucha diferencia en el nivel de vida.
+    * **Controles Dinámicos:** Los selectores de *país*, *región* e *indicador* se actualizan automáticamente según la disponibilidad de datos y la unidad seleccionada. Además, se filtra el listado de indicadores para mostrar solo aquellos disponibles para la unidad métrica escogida.
+    
+    * **Normalización de Datos:** Se han implementado funciones reactivas para transformar los valores absolutos a valores *per cápita*, permitiendo comparaciones justas. Debido a la escasez de datos en unidades de poder adquisitivo (PPS) a nivel regional y a la homogeneidad de precios dentro de un mismo país, el análisis regional se restringe exclusivamente a **Euros por habitante (EUR_HAB)**.
+    
+    * **Funcionalidades Avanzadas:** Se incluye una opción de "Seleccionar Todo" para facilitar la carga masiva de regiones, así como la posibilidad de activar escalas libres en los ejes. Destaca la capacidad de comparar regiones específicas (como Canarias) directamente con el agregado de la **Unión Europea** o con la media nacional, integrando estas entidades en los selectores para un análisis de convergencia directo. Se incluye una tabla de datos filtrados al pie de la visualización.
 
-* **Atributos por año:** Esta pestaña está basada en **mapas coropléticos** en los que se puede filtrar por **país, región, indicador y año.** Al igual que en la primera pestaña, se han implementado **inputs dinámicos.** Por último, al igual que en la primera pestaña, también se han utilizado **funciones reactivas** que permiten **normalizar** muchos de los atributos para convertirlos a **per cápita** y también adaptar la información del gráfico a los inputs seleccionados, la mayoría de atributos solo se encuentran disponibles en **euros por habitante**, siendo que por unidades **PPS per cápita** hay pocos datos disponibles. Se imprime una **tabla** en la parte inferior de los inputs como resultado del filtrado de dichos inputs para tener una manera distinta de visualizar los datos.
+* **Atributos por Año:** Centrada en la visualización geoespacial mediante **mapas coropléticos**. Permite el filtrado multidimensional (país, región, indicador y año). Al igual que en la sección anterior, se aplica una lógica de normalización para presentar datos *per cápita*. La interfaz discrimina la disponibilidad de unidades, restringiendo el análisis regional a euros corrientes por la limitación de datos PPS. Una tabla adjunta complementa la visualización espacial con los valores numéricos exactos.
 
-* **Comparación de atributos:** En esta pestaña se utiliza un **diagrama de dispersión** para ver **la relación entre dos variables económicas** en el cual se pueden seleccionar el año inicial a partir del cual se toman los datos y las dos variables a comparar por país o región de dicho país. A dichos atributos se les puede aplicar **transformaciones** tales como **raíz cuadrada, transformaciones logarítmicas o yeojohnson** que permiten mejorar el **modelo de regresión lineal**, dando resultados más fieles a la realidad. En este caso no se da la opción de elegir la unidad y todos los atributos se encuentran en **euros per cápita** ya que para **unidades PPS por habitante** apenas hay observaciones, al igual que en las demás pestañas se han tenido que **normalizar** muchos atributos para convertirlos en atributos per cápita. Se imprime una **tabla** con los resultados del filtrado de los inputs a la derecha como una manera distinta de ver los datos.
+* **Comparación de Atributos:** Esta pestaña implementa un análisis bivariante mediante **diagramas de dispersión**, permitiendo estudiar la correlación entre dos variables económicas seleccionadas por el usuario a partir de un año base.
 
-* **Predicción con ARIMA:** En esta pestaña se utiliza un **modelo ARIMA** para hacer una **predicción** de un indicador económico a elegir, se permite elegir el **año** a partir del cual se empiezan a tomar los datos de la serie temporal, el **número de años** a predecir, los **parámetros** para el modelo ARIMA y un **máximo** de dos países o regiones de dichos países a elegir para visualizar a la vez. Como en todas las pestañas se han tenido que **normalizar** los atributos y cuando se elige ver la predicción por regiones se pierde la opción de seleccionar la unidad por los motivos explicados anteriormente (falta de datos y de sentido). Se permite en países seleccionar a **Canarias** para poder ver el **aglomerado de la Unión Europea, España y Canarias** en una misma pestaña. Por otro lado cuando se van a seleccionar las regiones de un país, también se permite escoger el **aglomerado de la Unión Europea** para compararlo con las distintas regiones directamente. Todos los inputs se adaptan con **dinamismo** de manera que solo se puede seleccionar lo que el dataset nos ofrece.
+    * **Transformación de Variables:** Para mejorar el ajuste de los modelos de regresión lineal subyacentes, se permite aplicar transformaciones matemáticas a los ejes (raíz cuadrada, logarítmica o Yeo-Johnson).
+    
+    * **Unidad de Medida:** El análisis se realiza exclusivamente en euros *per cápita* debido a la mayor robustez y disponibilidad de datos frente al PPS. Los datos se normalizan automáticamente antes de la visualización.
+    
+    * Se acompaña de una tabla lateral con los datos resultantes del filtrado.
 
-* **Análisis de atributos:** Por último tenemos esta pestaña que nos permite analizar **todos los atributos** para los que hay observaciones en el dataset, en este caso lo hacemos a un nivel global, siendo que solo podemos elegir el año de las observaciones y si queremos filtrar por regiones **NUTS 0** (países) o regiones **NUTS 2** (comunidades). En función de lo seleccionado tenemos muchas subpestañas que cambian. La primera es una pestaña donde únicamente se ponen los atributos como columnas y se deja el nombre de la región para ver los valores de sus atributos, todos en **euros per cápita** y muchos **normalizados** ya que para las demás unidades aparecerían muy pocos indicadores y el análisis carecería de sentido, a parte de que lo que interesa ver en esta parte es simplemente la relación de las variables y ver cuanto podríamos **reducir la dimensionalidad** de dichas variables de manera que podamos explicar la mayor variación de los datos posible, así que la unidad no es relevante en principio. En segundo lugar vemos una **matriz de correlación** que nos indica que tan correlacionadas están esas variables por países, región o año (en función de los inputs elegidos). Las siguientes subpestañas se centran en **estandarizar los atributos** para poder compararlos y se calculan las **componentes principales**, siendo las últimas dos pestañas las encargadas mostrar que porcentaje de la **dispersión de los datos** explica cada componente y la **visualización** de dichas componentes.   
+* **Predicción con ARIMA:** Dedicada a la prospectiva económica, esta sección utiliza modelos **ARIMA** para proyectar la evolución de indicadores seleccionados.
 
+    * **Parametrización:** El usuario puede definir el año de inicio de la serie, el horizonte de predicción y los parámetros del modelo (p,d,q), buscando optimizar los intervalos de confianza.
+    
+    * **Alcance:** Permite la comparación simultánea de hasta dos entidades geográficas. Se ha habilitado la inclusión de **Canarias** y el agregado de la **Unión Europea** tanto en los selectores nacionales como regionales para facilitar comparativas de convergencia.
+    
+    * **Restricciones:** Al igual que en las series temporales, el análisis regional fuerza el uso de euros por habitante debido a la consistencia de los datos. La interfaz se adapta dinámicamente para impedir selecciones inválidas.
 
+* **Análisis de Atributos (Multivariante):** Esta pestaña ofrece una visión global de la estructura de los datos para un año seleccionado, permitiendo filtrar por nivel administrativo (NUTS 0 o NUTS 2). Se estructura en sub-secciones analíticas:
+
+    1.  **Tabla de Datos:** Muestra los valores brutos. Todos los atributos se presentan normalizados (*per cápita*) y en euros, priorizando la disponibilidad de datos para maximizar el número de observaciones útiles para el análisis de reducción de dimensionalidad.
+    
+    2.  **Matriz de Correlación:** Visualiza la intensidad de las relaciones lineales entre las variables seleccionadas.
+    
+    3.  **Estandarización y PCA:** Se incluye una vista de los datos estandarizados y el cálculo de los **Componentes Principales (PCA)**.
+    
+    4.  **Visualización PCA:** Dos pestañas finales muestran el porcentaje de varianza explicada por cada componente (gráfico de sedimentación) y la proyección de las observaciones en los nuevos ejes (Biplot/Scatterplot), facilitando la identificación de patrones y clústeres regionales.
 
 # Conclusiones y trabajo futuro
 
 
 ## Conclusiones
 
-<!-- Revisión clara y concisa de los hallazgos más relevantes del estudio, vinculados directamente con los objetivos o hipótesis planteados. Reconocimiento honesto de los puntos débiles o restricciones (por ejemplo, tamaño de muestra reducido, falta de datos, sesgos.  Evitar aquí generalidades de ChatGPT --> 
+El análisis realizado ha permitido diseccionar la estructura económica de los hogares europeos y españoles, validando la hipótesis de que los promedios nacionales (NUTS 0) son insuficientes para comprender la realidad del bienestar económico. A la luz de los objetivos planteados, se extraen las siguientes conclusiones empíricas:
+
+* **1. La Convergencia Interrumpida y la Brecha Este-Oeste**
+
+El análisis de series temporales evidencia que la convergencia de **España** con el núcleo rico de la UE (Alemania, Benelux, Austria) se fracturó tras la crisis de 2008. Asimismo, la visualización espacial mediante **mapas coropléticos** confirma una marcada desigualdad estructural en el continente: existe una frontera económica visible que divide a Europa. A pesar de que economías emergentes del Este (como Polonia) muestran pendientes de crecimiento aceleradas, en términos de **renta disponible** absoluta sigue existiendo un desfase significativo respecto al bloque occidental, perpetuando una "Europa a dos velocidades" donde la riqueza se concentra en un eje central industrial. Además, los datos históricos nos dicen que esta desigualdad va en aumento en lugar de disminuir, siendo que con el paso de los años la diferencia en términos de renta neta por regiones es mayor.
+
+* **2. La Fractura Interna: El caso de la "España divergente"**
+
+Al descender al nivel NUTS 2, se confirma una dualidad estructural en España. Las regiones de **Madrid, País Vasco y Navarra** presentan métricas de renta y ahorro alineadas con la media-alta europea, actuando como motores de tracción. En contraste, **Canarias, Andalucía y Extremadura** permanecen en un rezago crónico.Un hallazgo crítico del modelado ARIMA es la proyección preocupante para las Ciudades Autónomas (**Ceuta y Melilla**), donde, a diferencia de la inercia de crecimiento del resto del país, se prevé un estancamiento o decrecimiento real, señalando un riesgo de desacople económico severo. Además, el diagrama de dispersión por comunidades autónomas que relaciona la renta neta y el ahorro, muestra claramente que a lo largo de los años los países se separan más unos de otros, lo que quiere decir que esta desigualdad, al igual que en el caso de Europa, va en aumento.
+
+* **3. Fiscalidad como Consecuencia de la Riqueza**
+
+El modelo de regresión lineal ($R^2 = 0.88$) aplicado sobre los datos de 2022 desmiente la noción de una presión fiscal desproporcionada en España. Los datos sitúan a España exactamente sobre la línea de regresión: la carga fiscal soportada ($\text{D5} + \text{D61}$) es matemáticamente consistente con su nivel de renta neta.El análisis comparativo revela que los mayores niveles de bienestar (Dinamarca, Países Bajos) están intrínsecamente ligados a una presión fiscal muy superior ($> 8.000\text{€}$/hab), necesaria para sostener sus sistemas de protección social, mientras que España se mantiene en un punto de equilibrio medio ($~6.000\text{€}$/hab).
+
+* **4. Redundancia de Variables (PCA)** 
+
+El Análisis de Componentes Principales demostró que la complejidad económica regional es reducible: el **64.8% de la varianza** entre regiones se explica por un solo factor latente (riqueza/tamaño). Esto implica que variables aparentemente distintas (Renta, Ahorro, Inversión) se mueven en bloque: no hemos encontrado regiones "pobres con alta inversión" o "ricas con bajo ahorro"; el desarrollo es sistémico.
+
+#### Limitaciones del Estudio
+
+Es necesario reconocer las restricciones que condicionan el alcance de estas conclusiones:
+
+* **Sesgo por falta de paridad de poder adquisitivo (PPS):** La indisponibilidad de datos en unidades PPS para variables clave como la **Inversión** o el **Ahorro** obliga a usar Euros corrientes. Esto subestima el esfuerzo real de inversión en las economías de Europa del Este, donde el coste de la vida es menor, y podría estar magnificando la brecha visual con los países nórdicos.
+
+* **Ceguera ante la desigualdad interna:** Al trabajar con medias per cápita (incluso en NUTS 2), el estudio asume una distribución homogénea de la riqueza dentro de cada región. No se ha podido determinar si el crecimiento de la renta en regiones como Madrid beneficia al conjunto de la población o si se concentra en los deciles superiores (coeficiente de Gini).
+
+* **Modelado Univariante:** Las predicciones ARIMA, aunque robustas en sus intervalos de confianza a corto plazo, se basan exclusivamente en la historia pasada de la variable. No incorporan choques exógenos futuros (cambios legislativos, crisis geopolíticas o energéticas), por lo que deben interpretarse como un escenario de "inercia" y no como una certeza absoluta.
 
 ## Trabajo futuro
 
-<!-- Líneas de trabajo futuro, aspectos pendientes, posibles extensiones. --> 
+La naturaleza iterativa de la metodología **CRISP-DM** implica que el final de un ciclo de análisis abre la puerta a nuevas preguntas y refinerías. A la luz de las limitaciones identificadas durante la fase de evaluación y el despliegue del modelo, se proponen las siguientes líneas de investigación y mejora para futuras iteraciones del proyecto:
+
+#### 1. Profundización en la Estructura Fiscal (Impuestos Indirectos)
+
+El análisis actual de la presión fiscal se ha limitado a los impuestos directos ($\text{D5}$) y cotizaciones ($\text{D61}$). Una extensión crítica sería la incorporación de los **Impuestos sobre la producción y las importaciones** ($\text{D2}$), que incluyen el IVA. Dado que estos impuestos tienen un carácter regresivo y afectan directamente al consumo, su inclusión permitiría calcular la **Carga Fiscal Total** real que soportan los hogares, ofreciendo una visión más holística de la pérdida de poder adquisitivo tras la intervención estatal.
+
+#### 2. Descenso a la Granularidad NUTS 3 (Análisis Intra-regional)
+
+Si bien el nivel NUTS 2 ha permitido visibilizar la brecha entre Comunidades Autónomas, este promedio aún enmascara realidades locales dispares. Se propone descender al nivel **NUTS 3 (provincias e islas)**. Esta ampliación sería especialmente relevante para el caso de **Canarias**, permitiendo un análisis de la "doble insularidad" para determinar si la riqueza y la renta se distribuyen equitativamente entre las islas capitalinas y las no capitalinas.
+
+#### 3. Homogeneización del Coste de Vida (Expansión de Datos PPS)
+
+
+Una limitación recurrente ha sido la escasez de datos en unidades de **Estándar de Poder Adquisitivo (PPS)** para indicadores secundarios (como el Ahorro o la Inversión), obligando al uso de Euros nominales. Un trabajo futuro indispensable es la búsqueda de fuentes complementarias o el cálculo manual de factores de conversión PPS para **todas las variables monetarias.** Esto eliminaría el sesgo de precios entre países del Este y del Norte de Europa, refinando las conclusiones sobre el esfuerzo de ahorro y la inversión real.
+
+
+#### 4. Modelado Multivariante (Mejora de Predicciones)
+
+
+Los modelos **ARIMA** utilizados son univariantes (se basan solo en el pasado de la propia variable). Para reducir la incertidumbre observada en los intervalos de confianza a largo plazo, se propone la implementación de **modelos de regresión dinámica (ARIMAX)** o Modelos de Vectores Autorregresivos (VAR). Estos permitirían incluir variables exógenas predictoras, como la tasa de desempleo, la inflación o el crecimiento del PIB nacional, para afinar las proyecciones de renta neta.
+
+#### 5. Análisis de Desigualdad Interna
+
+Finalmente, el estudio se ha basado en medias per cápita. Una extensión valiosa sería incorporar indicadores de distribución, como el **Coeficiente de Gini** o el ratio S80/S20 regional. Esto permitiría discernir si un aumento en la Renta Disponible per Cápita se traduce en un bienestar generalizado o si, por el contrario, responde a una concentración de la riqueza en los deciles más altos de la población regional. 
 
 
 ## Anexo. Seguimiento temporal actividades del proyecto  {-} 
