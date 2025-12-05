@@ -1279,6 +1279,7 @@ data.imp.comunidades.plot <- data.imp.comunidades %>%
                           "<br>Valores: ", round(imp.per.capita,1), "€/HAB"))) +
   geom_tile(color = "grey80") +
   scale_fill_gradient(low = "white", high = "steelblue") + 
+  geom_text(aes(label = round(imp.per.capita,1)), color = "black", size = 3.5)+
   labs(title="Impuestos sobre renta y patrimonio pagados (2016-2022)",
        x="Año",
        y="Comunidades (España)",
@@ -1568,7 +1569,7 @@ Este mapa de calor nos permitirá visualizar qué países y regiones tienen la m
 
 <br>
 
-```{r,fig.asp = 0.8}
+```{r,fig.height = 8, fig.width= 10}
 
 data.imp <- data %>%
   filter(na_item %in% c('D5', 'D61') & unit == 'MIO_EUR' & NUTS == 0, TIME_PERIOD > 2015 & TIME_PERIOD < 2023, direct == 'PAID') %>%
@@ -1592,6 +1593,7 @@ data.imp.plot <- data.imp %>%
                           "<br>Valores: ", round(Impuestos.pagados,1), "€/HAB"))) +
   geom_tile(color = "black", linewidth = 0.5) +
   scale_fill_gradient(low = "white", high = "steelblue") + 
+      geom_text(aes(label = round(Impuestos.pagados,1)), color = "black", size = 3.5) +
   labs(title="Presión Fiscal Directa sobre la Renta (2016-2022)",
        x="Año",
        y="Países") + 
@@ -1658,7 +1660,8 @@ etiquetas <- paste( "<strong>", datos_filtrados$NUTS_NAME,
                    round(datos_filtrados$values, 1), "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
 
-leyenda <- "Renta neta<br>disponible (2022)"
+leyenda <- "Renta neta<br>disponible<br>(2022)<br>
+(PPS/Hab)"
 MapaCoropléticoMemoria(geoj2_filtrado, datos_filtrados$values, etiquetas, leyenda)
 ```
 <br>
@@ -1699,7 +1702,8 @@ etiquetas <- paste( "<strong>", datos_filtrados$NUTS_NAME,
                      round(datos_filtrados$values, 1), "<strong>PPS/HAB</strong>") %>% 
   lapply(htmltools::HTML)
 
-leyenda <- "Inversión en<br>activos fijos (2022)"
+leyenda <- "Inversión en<br>activos fijos<br>(2022)<br>
+(€/Hab)"
 MapaCoropléticoMemoria(geoj2_filtrado, datos_filtrados$values, etiquetas, leyenda)
 ```
 <br>
