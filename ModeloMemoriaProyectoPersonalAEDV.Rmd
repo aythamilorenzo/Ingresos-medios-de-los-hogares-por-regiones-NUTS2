@@ -449,6 +449,15 @@ if (knitr::is_latex_output()) {
 tabla
 ```
 
+<br>
+
+#### Justificación del alineamiento
+
+El proyecto presenta una vinculación directa y **Alta** con el **ODS 1 (Fin de la Pobreza)** y el **ODS 10 (Reducción de las Desigualdades).** El análisis de la Renta Disponible Neta ($\text{B6N}$) y su distribución geográfica a nivel NUTS 2 permite identificar con precisión las brechas de riqueza entre las regiones europeas y las disparidades internas en España (como el caso de Canarias). Al visibilizar la divergencia económica y la capacidad real de los hogares, el estudio aporta la base empírica necesaria para evaluar la cohesión territorial.
+
+Asimismo, existe una relación **Media** con el **ODS 8 (Trabajo Decente y Crecimiento Económico),** dado que se analizan indicadores estructurales como la Remuneración de Asalariados ($\text{D1}$) y el Ingreso Primario ($\text{B5N}$), los cuales actúan como termómetros de la productividad y la calidad del empleo regional.
+
+Finalmente, se asigna un nivel **Bajo** a los **ODS 3 (Salud y Bienestar)** y **ODS 5 (Igualdad de Género).** Aunque el nivel de renta es un determinante social de la salud y las prestaciones sociales ($\text{D62}$) incluyen ayudas familiares, el dataset utilizado no permite un desglose específico por género ni métricas sanitarias directas, quedando su impacto en un plano indirecto o contextual. El **ODS 17** se justifica por el uso y promoción de datos abiertos (Open Data) de instituciones europeas.   
 
 # Desarrollo
 
